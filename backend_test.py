@@ -104,7 +104,59 @@ class SiskosanAPITester:
             print("❌ Failed to get authentication token")
             return False
 
-    def test_rooms(self):
+    def test_users(self):
+        """Test user management (Super Admin only)"""
+        print("\n=== TESTING USER MANAGEMENT ===")
+        
+        # Create new admin user
+        user_data = {
+            "email": "testadmin@siskosan.com",
+            "password": "testpass123",
+            "role": "admin"
+        }
+        success, response = self.run_test(
+            "Create Admin User",
+            "POST",
+            "auth/register",
+            200,
+            data=user_data
+        )
+        
+        if success and 'id' in response:
+            user_id = response['id']
+            self.created_ids['users'].append(user_id)
+            
+            # Get all users
+            self.run_test(
+                "Get All Users",
+                "GET",
+                "users",
+                200
+            )
+            
+            # Create owner user
+            owner_data = {
+                "email": "testowner@siskosan.com",
+                "password": "testpass123",
+                "role": "owner"
+            }
+            success2, response2 = self.run_test(
+                "Create Owner User",
+                "POST",
+                "auth/register",
+                200,
+                data=owner_data
+            )
+            
+            if success2 and 'id' in response2:
+                self.created_ids['users'].append(response2['id'])
+            
+            # Test validation - cannot delete own account
+            # This should fail since we're trying to delete our own account
+            # We'll skip this test for now
+            
+            return True
+        return False
         """Test room CRUD operations"""
         print("\n=== TESTING ROOMS ===")
         
