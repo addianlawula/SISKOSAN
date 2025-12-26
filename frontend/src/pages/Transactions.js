@@ -42,12 +42,14 @@ const Transactions = () => {
 
   const fetchData = async () => {
     try {
-      const [transactionsRes, summaryRes] = await Promise.all([
+      const [transactionsRes, summaryRes, categoriesRes] = await Promise.all([
         axios.get(`${API}/transactions`),
         axios.get(`${API}/transactions/summary?bulan=${selectedMonth}&tahun=${selectedYear}`),
+        axios.get(`${API}/categories`),
       ]);
       setTransactions(transactionsRes.data);
       setSummary(summaryRes.data);
+      setCategories(categoriesRes.data);
     } catch (error) {
       toast.error('Gagal memuat data');
     } finally {
