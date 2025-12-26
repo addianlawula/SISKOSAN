@@ -615,6 +615,110 @@ async def mark_bill_paid(bill_id: str, cara_bayar: Literal["tunai", "non_tunai"]
     
     return {"message": "Tagihan berhasil ditandai lunas"}
 
+@api_router.get("/bills/{bill_id}/kwitansi")
+async def generate_kwitansi(bill_id: str, current_user: User = Depends(get_current_user)):
+    bill = await db.bills.find_one({"id": bill_id}, {"_id": 0})
+    if not bill:
+        raise HTTPException(status_code=404, detail="Tagihan tidak ditemukan")
+    
+    if bill['status'] != "lunas":
+        raise HTTPException(status_code=400, detail="Kwitansi hanya untuk tagihan yang sudah lunas")
+    
+    rental = await db.rentals.find_one({"id": bill['rental_id']}, {"_id": 0})
+    room = await db.rooms.find_one({"id": rental['room_id']}, {"_id": 0})
+    tenant = await db.tenants.find_one({"id": rental['tenant_id']}, {"_id": 0})
+    
+    # Generate PDF
+    pdf_path = UPLOADS_DIR / f"kwitansi_{bill_id}.pdf"
+    c = canvas.Canvas(str(pdf_path), pagesize=A4)
+    width, height = A4
+    
+    # Header
+    c.setFont("Helvetica-Bold", 20)
+    c.drawCentredString(width / 2, height - 50, "KWITANSI PEMBAYARAN")
+    
+    c.setFont("Helvetica-Bold", 14)
+    c.drawCentredString(width / 2, height - 75, "SISKOSAN")
+    
+    # Line
+    c.setStrokeColor(colors.black)
+    c.setLineWidth(2)
+    c.line(50, height - 90, width - 50, height - 90)
+    
+    # Details
+    y_position = height - 130
+    c.setFont("Helvetica", 11)
+    
+    # Left column
+    details = [
+        f"No. Kwitansi: KWT-{bill_id[:8].upper()}",
+        f"Tanggal: {datetime.fromisoformat(bill['tanggal_bayar']).strftime('%d %B %Y')}",
+        "",
+        "Telah terima dari:",
+        f"Nama: {tenant['nama']}",
+        f"Alamat: {tenant['alamat']}",
+        f"Telepon: {tenant['telepon']}",
+        "",
+        "Untuk pembayaran:",
+        f"Sewa Kamar: {room['nomor_kamar']}",
+        f"Periode: {['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][bill['bulan']-1]} {bill['tahun']}",
+    ]
+    
+    if bill.get('keterangan'):
+        details.append(f"Keterangan: {bill['keterangan']}")
+    
+    for line in details:
+        if line == "":
+            y_position -= 10
+        else:
+            if line.startswith("Telah terima") or line.startswith("Untuk pembayaran"):
+                c.setFont("Helvetica-Bold", 11)
+            else:
+                c.setFont("Helvetica", 11)
+            c.drawString(60, y_position, line)
+            y_position -= 20
+    
+    # Amount box
+    y_position -= 10
+    c.setStrokeColor(colors.black)
+    c.setLineWidth(1)
+    c.rect(60, y_position - 40, width - 120, 60)
+    
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(70, y_position - 15, "Jumlah Dibayar:")
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(70, y_position - 35, f"Rp {bill['jumlah']:,.0f}".replace(",", "."))
+    
+    # Payment method
+    y_position -= 80
+    c.setFont("Helvetica", 10)
+    cara_bayar_text = "Tunai" if bill.get('cara_bayar') == 'tunai' else "Transfer/Non Tunai"
+    c.drawString(60, y_position, f"Cara Bayar: {cara_bayar_text}")
+    
+    # Signature
+    y_position -= 60
+    c.setFont("Helvetica", 10)
+    c.drawString(width - 200, y_position, "Penerima,")
+    
+    y_position -= 60
+    c.line(width - 200, y_position, width - 60, y_position)
+    y_position -= 15
+    c.drawString(width - 200, y_position, "(Admin)")
+    
+    # Footer
+    c.setFont("Helvetica-Oblique", 8)
+    c.setFillColor(colors.grey)
+    c.drawCentredString(width / 2, 30, "Kwitansi ini sah tanpa tanda tangan dan stempel")
+    c.drawCentredString(width / 2, 20, "Terima kasih atas pembayaran Anda")
+    
+    c.save()
+    
+    return FileResponse(
+        path=str(pdf_path),
+        media_type='application/pdf',
+        filename=f"kwitansi_{tenant['nama'].replace(' ', '_')}_{bill['bulan']}_{bill['tahun']}.pdf"
+    )
+
 # ==================== MAINTENANCE ENDPOINTS ====================
 
 @api_router.post("/maintenance", response_model=Maintenance)
