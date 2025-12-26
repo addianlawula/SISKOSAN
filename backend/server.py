@@ -19,26 +19,22 @@ from calendar import monthrange
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# MongoDB connection
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-# JWT & Password
-SECRET_KEY = os.environ.get('SECRET_KEY', 'kosman-secret-key-change-in-production')
+SECRET_KEY = os.environ.get('SECRET_KEY', 'siskosan-secret-key-change-in-production')
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 43200  # 30 days
+ACCESS_TOKEN_EXPIRE_MINUTES = 43200
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
 
-# Create uploads directory
 UPLOADS_DIR = ROOT_DIR / "uploads"
 UPLOADS_DIR.mkdir(exist_ok=True)
 
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
-# Serve uploads directory
 app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
 
 # ==================== MODELS ====================
@@ -70,7 +66,7 @@ class Room(BaseModel):
     nomor_kamar: str
     harga: float
     fasilitas: str
-    status: Literal["kosong", "terisi", "perbaikan"] = "kosong"
+    status: Literal["kosong", "terisi"] = "kosong"
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class RoomCreate(BaseModel):
@@ -82,7 +78,7 @@ class RoomUpdate(BaseModel):
     nomor_kamar: Optional[str] = None
     harga: Optional[float] = None
     fasilitas: Optional[str] = None
-    status: Optional[Literal["kosong", "terisi", "perbaikan"]] = None
+    status: Optional[Literal["kosong", "terisi"]] = None
 
 class Tenant(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -108,46 +104,50 @@ class TenantUpdate(BaseModel):
     ktp: Optional[str] = None
     alamat: Optional[str] = None
 
-class Contract(BaseModel):
+class Rental(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     tenant_id: str
     room_id: str
     tanggal_mulai: datetime
-    tanggal_selesai: datetime
     harga: float
     status: Literal["aktif", "selesai"] = "aktif"
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-class ContractCreate(BaseModel):
-    tenant_id: str
+class RentalCreate(BaseModel):
     room_id: str
-    tanggal_mulai: datetime
-    tanggal_selesai: datetime
     harga: float
+    tanggal_mulai: Optional[datetime] = None
+    tenant: Optional[TenantCreate] = None
+    tenant_id: Optional[str] = None
 
 class Bill(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    contract_id: str
+    rental_id: str
     bulan: int
     tahun: int
     jumlah: float
+    tipe: Literal["sewa", "tambahan"] = "sewa"
+    keterangan: Optional[str] = None
     status: Literal["belum_bayar", "lunas"] = "belum_bayar"
     bukti_bayar: Optional[str] = None
     tanggal_bayar: Optional[datetime] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class BillCreate(BaseModel):
-    contract_id: str
+    rental_id: str
     bulan: int
     tahun: int
     jumlah: float
+    tipe: Literal["sewa", "tambahan"] = "sewa"
+    keterangan: Optional[str] = None
 
 class Maintenance(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    room_id: str
+    lokasi: str
+    room_id: Optional[str] = None
     deskripsi: str
     petugas: Optional[str] = None
     status: Literal["dibuka", "dikerjakan", "selesai"] = "dibuka"
@@ -156,7 +156,8 @@ class Maintenance(BaseModel):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class MaintenanceCreate(BaseModel):
-    room_id: str
+    lokasi: str
+    room_id: Optional[str] = None
     deskripsi: str
 
 class MaintenanceUpdate(BaseModel):
@@ -181,10 +182,12 @@ class TransactionCreate(BaseModel):
 
 class DashboardStats(BaseModel):
     jumlah_kamar_terisi: int
+    jumlah_kamar_kosong: int
     jumlah_tagihan_belum_bayar: int
     pemasukan_bulan_ini: float
     jumlah_laporan_kerusakan: int
-    aktivitas_terbaru: List[dict]
+    tagihan_belum_bayar: List[dict]
+    kamar_kosong: List[dict]
 
 # ==================== AUTH HELPERS ====================
 
@@ -233,7 +236,6 @@ def require_admin(current_user: User = Depends(get_current_user)):
 
 @api_router.post("/auth/register", response_model=User)
 async def register(user_input: UserCreate):
-    # Check if user exists
     existing_user = await db.users.find_one({"email": user_input.email}, {"_id": 0})
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -270,7 +272,6 @@ async def get_me(current_user: User = Depends(get_current_user)):
 
 @api_router.post("/rooms", response_model=Room)
 async def create_room(room_input: RoomCreate, current_user: User = Depends(require_admin)):
-    # Check if room number exists
     existing = await db.rooms.find_one({"nomor_kamar": room_input.nomor_kamar}, {"_id": 0})
     if existing:
         raise HTTPException(status_code=400, detail="Nomor kamar sudah ada")
@@ -317,10 +318,9 @@ async def update_room(room_id: str, room_input: RoomUpdate, current_user: User =
 
 @api_router.delete("/rooms/{room_id}")
 async def delete_room(room_id: str, current_user: User = Depends(require_admin)):
-    # Check if room has active contract
-    active_contract = await db.contracts.find_one({"room_id": room_id, "status": "aktif"}, {"_id": 0})
-    if active_contract:
-        raise HTTPException(status_code=400, detail="Tidak bisa hapus kamar yang sedang ada kontrak aktif")
+    active_rental = await db.rentals.find_one({"room_id": room_id, "status": "aktif"}, {"_id": 0})
+    if active_rental:
+        raise HTTPException(status_code=400, detail="Tidak bisa hapus kamar yang sedang disewa")
     
     result = await db.rooms.delete_one({"id": room_id})
     if result.deleted_count == 0:
@@ -373,138 +373,144 @@ async def update_tenant(tenant_id: str, tenant_input: TenantUpdate, current_user
 
 @api_router.delete("/tenants/{tenant_id}")
 async def delete_tenant(tenant_id: str, current_user: User = Depends(require_admin)):
-    # Check if tenant has active contract
-    active_contract = await db.contracts.find_one({"tenant_id": tenant_id, "status": "aktif"}, {"_id": 0})
-    if active_contract:
-        raise HTTPException(status_code=400, detail="Tidak bisa hapus penghuni yang memiliki kontrak aktif")
+    active_rental = await db.rentals.find_one({"tenant_id": tenant_id, "status": "aktif"}, {"_id": 0})
+    if active_rental:
+        raise HTTPException(status_code=400, detail="Tidak bisa hapus penghuni yang sedang menyewa")
     
     result = await db.tenants.delete_one({"id": tenant_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Penghuni tidak ditemukan")
     return {"message": "Penghuni berhasil dihapus"}
 
-# ==================== CONTRACT ENDPOINTS ====================
+# ==================== RENTAL ENDPOINTS ====================
 
-@api_router.post("/contracts", response_model=Contract)
-async def create_contract(contract_input: ContractCreate, current_user: User = Depends(require_admin)):
-    # Validate room exists
-    room = await db.rooms.find_one({"id": contract_input.room_id}, {"_id": 0})
+@api_router.post("/rentals", response_model=Rental)
+async def create_rental(rental_input: RentalCreate, current_user: User = Depends(require_admin)):
+    room = await db.rooms.find_one({"id": rental_input.room_id}, {"_id": 0})
     if not room:
         raise HTTPException(status_code=404, detail="Kamar tidak ditemukan")
     
-    # Validate tenant exists
-    tenant = await db.tenants.find_one({"id": contract_input.tenant_id}, {"_id": 0})
+    active_rental = await db.rentals.find_one({"room_id": rental_input.room_id, "status": "aktif"}, {"_id": 0})
+    if active_rental:
+        raise HTTPException(status_code=400, detail="Kamar sudah disewa")
+    
+    tenant_id = rental_input.tenant_id
+    
+    if rental_input.tenant and not tenant_id:
+        tenant_obj = Tenant(**rental_input.tenant.model_dump())
+        tenant_doc = tenant_obj.model_dump()
+        tenant_doc['created_at'] = tenant_doc['created_at'].isoformat()
+        await db.tenants.insert_one(tenant_doc)
+        tenant_id = tenant_obj.id
+    
+    if not tenant_id:
+        raise HTTPException(status_code=400, detail="Tenant ID atau data tenant baru harus diisi")
+    
+    tenant = await db.tenants.find_one({"id": tenant_id}, {"_id": 0})
     if not tenant:
         raise HTTPException(status_code=404, detail="Penghuni tidak ditemukan")
     
-    # Check if room has active contract
-    active_contract = await db.contracts.find_one({"room_id": contract_input.room_id, "status": "aktif"}, {"_id": 0})
-    if active_contract:
-        raise HTTPException(status_code=400, detail="Kamar sudah memiliki kontrak aktif")
+    tanggal_mulai = rental_input.tanggal_mulai or datetime.now(timezone.utc)
     
-    contract_dict = contract_input.model_dump()
-    contract_obj = Contract(**contract_dict)
-    doc = contract_obj.model_dump()
+    rental_obj = Rental(
+        tenant_id=tenant_id,
+        room_id=rental_input.room_id,
+        tanggal_mulai=tanggal_mulai,
+        harga=rental_input.harga
+    )
+    
+    doc = rental_obj.model_dump()
     doc['created_at'] = doc['created_at'].isoformat()
     doc['tanggal_mulai'] = doc['tanggal_mulai'].isoformat()
-    doc['tanggal_selesai'] = doc['tanggal_selesai'].isoformat()
     
-    await db.contracts.insert_one(doc)
+    await db.rentals.insert_one(doc)
+    await db.rooms.update_one({"id": rental_input.room_id}, {"$set": {"status": "terisi"}})
     
-    # Update room status to terisi
-    await db.rooms.update_one({"id": contract_input.room_id}, {"$set": {"status": "terisi"}})
+    return rental_obj
+
+@api_router.get("/rentals", response_model=List[Rental])
+async def get_rentals(current_user: User = Depends(get_current_user)):
+    rentals = await db.rentals.find({}, {"_id": 0}).to_list(1000)
+    for rental in rentals:
+        if isinstance(rental['created_at'], str):
+            rental['created_at'] = datetime.fromisoformat(rental['created_at'])
+        if isinstance(rental['tanggal_mulai'], str):
+            rental['tanggal_mulai'] = datetime.fromisoformat(rental['tanggal_mulai'])
+    return rentals
+
+@api_router.get("/rentals/{rental_id}", response_model=Rental)
+async def get_rental(rental_id: str, current_user: User = Depends(get_current_user)):
+    rental = await db.rentals.find_one({"id": rental_id}, {"_id": 0})
+    if not rental:
+        raise HTTPException(status_code=404, detail="Data sewa tidak ditemukan")
+    if isinstance(rental['created_at'], str):
+        rental['created_at'] = datetime.fromisoformat(rental['created_at'])
+    if isinstance(rental['tanggal_mulai'], str):
+        rental['tanggal_mulai'] = datetime.fromisoformat(rental['tanggal_mulai'])
+    return Rental(**rental)
+
+@api_router.post("/rentals/{rental_id}/end")
+async def end_rental(rental_id: str, current_user: User = Depends(require_admin)):
+    rental = await db.rentals.find_one({"id": rental_id}, {"_id": 0})
+    if not rental:
+        raise HTTPException(status_code=404, detail="Data sewa tidak ditemukan")
     
-    # Create monthly bills
-    start_date = contract_input.tanggal_mulai
-    end_date = contract_input.tanggal_selesai
+    if rental['status'] == "selesai":
+        raise HTTPException(status_code=400, detail="Sewa sudah selesai")
     
-    current = start_date.replace(day=1)
-    while current <= end_date:
-        # Check if bill already exists
+    await db.rentals.update_one({"id": rental_id}, {"$set": {"status": "selesai"}})
+    await db.rooms.update_one({"id": rental['room_id']}, {"$set": {"status": "kosong"}})
+    
+    return {"message": "Sewa berhasil diakhiri"}
+
+# ==================== BILL ENDPOINTS ====================
+
+@api_router.post("/bills/generate-monthly")
+async def generate_monthly_bills(current_user: User = Depends(require_admin)):
+    now = datetime.now(timezone.utc)
+    current_month = now.month
+    current_year = now.year
+    
+    active_rentals = await db.rentals.find({"status": "aktif"}, {"_id": 0}).to_list(1000)
+    
+    created_count = 0
+    for rental in active_rentals:
         existing_bill = await db.bills.find_one({
-            "contract_id": contract_obj.id,
-            "bulan": current.month,
-            "tahun": current.year
+            "rental_id": rental['id'],
+            "bulan": current_month,
+            "tahun": current_year,
+            "tipe": "sewa"
         }, {"_id": 0})
         
         if not existing_bill:
             bill = Bill(
-                contract_id=contract_obj.id,
-                bulan=current.month,
-                tahun=current.year,
-                jumlah=contract_input.harga
+                rental_id=rental['id'],
+                bulan=current_month,
+                tahun=current_year,
+                jumlah=rental['harga'],
+                tipe="sewa"
             )
             bill_doc = bill.model_dump()
             bill_doc['created_at'] = bill_doc['created_at'].isoformat()
             await db.bills.insert_one(bill_doc)
-        
-        # Move to next month
-        if current.month == 12:
-            current = current.replace(year=current.year + 1, month=1)
-        else:
-            current = current.replace(month=current.month + 1)
+            created_count += 1
     
-    return contract_obj
-
-@api_router.get("/contracts", response_model=List[Contract])
-async def get_contracts(current_user: User = Depends(get_current_user)):
-    contracts = await db.contracts.find({}, {"_id": 0}).to_list(1000)
-    for contract in contracts:
-        if isinstance(contract['created_at'], str):
-            contract['created_at'] = datetime.fromisoformat(contract['created_at'])
-        if isinstance(contract['tanggal_mulai'], str):
-            contract['tanggal_mulai'] = datetime.fromisoformat(contract['tanggal_mulai'])
-        if isinstance(contract['tanggal_selesai'], str):
-            contract['tanggal_selesai'] = datetime.fromisoformat(contract['tanggal_selesai'])
-    return contracts
-
-@api_router.get("/contracts/{contract_id}", response_model=Contract)
-async def get_contract(contract_id: str, current_user: User = Depends(get_current_user)):
-    contract = await db.contracts.find_one({"id": contract_id}, {"_id": 0})
-    if not contract:
-        raise HTTPException(status_code=404, detail="Kontrak tidak ditemukan")
-    if isinstance(contract['created_at'], str):
-        contract['created_at'] = datetime.fromisoformat(contract['created_at'])
-    if isinstance(contract['tanggal_mulai'], str):
-        contract['tanggal_mulai'] = datetime.fromisoformat(contract['tanggal_mulai'])
-    if isinstance(contract['tanggal_selesai'], str):
-        contract['tanggal_selesai'] = datetime.fromisoformat(contract['tanggal_selesai'])
-    return Contract(**contract)
-
-@api_router.post("/contracts/{contract_id}/end")
-async def end_contract(contract_id: str, current_user: User = Depends(require_admin)):
-    contract = await db.contracts.find_one({"id": contract_id}, {"_id": 0})
-    if not contract:
-        raise HTTPException(status_code=404, detail="Kontrak tidak ditemukan")
-    
-    if contract['status'] == "selesai":
-        raise HTTPException(status_code=400, detail="Kontrak sudah selesai")
-    
-    # Update contract status
-    await db.contracts.update_one({"id": contract_id}, {"$set": {"status": "selesai"}})
-    
-    # Update room status to kosong
-    await db.rooms.update_one({"id": contract['room_id']}, {"$set": {"status": "kosong"}})
-    
-    return {"message": "Kontrak berhasil diakhiri"}
-
-# ==================== BILL ENDPOINTS ====================
+    return {"message": f"Berhasil membuat {created_count} tagihan", "count": created_count}
 
 @api_router.post("/bills", response_model=Bill)
 async def create_bill(bill_input: BillCreate, current_user: User = Depends(require_admin)):
-    # Check if contract exists
-    contract = await db.contracts.find_one({"id": bill_input.contract_id}, {"_id": 0})
-    if not contract:
-        raise HTTPException(status_code=404, detail="Kontrak tidak ditemukan")
+    rental = await db.rentals.find_one({"id": bill_input.rental_id}, {"_id": 0})
+    if not rental:
+        raise HTTPException(status_code=404, detail="Data sewa tidak ditemukan")
     
-    # Check if bill already exists for this month
     existing_bill = await db.bills.find_one({
-        "contract_id": bill_input.contract_id,
+        "rental_id": bill_input.rental_id,
         "bulan": bill_input.bulan,
-        "tahun": bill_input.tahun
+        "tahun": bill_input.tahun,
+        "tipe": bill_input.tipe
     }, {"_id": 0})
     if existing_bill:
-        raise HTTPException(status_code=400, detail="Tagihan untuk bulan ini sudah ada")
+        raise HTTPException(status_code=400, detail="Tagihan untuk periode ini sudah ada")
     
     bill_dict = bill_input.model_dump()
     bill_obj = Bill(**bill_dict)
@@ -541,7 +547,6 @@ async def upload_payment_proof(bill_id: str, file: UploadFile = File(...), curre
     if not bill:
         raise HTTPException(status_code=404, detail="Tagihan tidak ditemukan")
     
-    # Save file
     file_ext = file.filename.split('.')[-1]
     filename = f"{bill_id}_{uuid.uuid4()}.{file_ext}"
     file_path = UPLOADS_DIR / filename
@@ -549,7 +554,6 @@ async def upload_payment_proof(bill_id: str, file: UploadFile = File(...), curre
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
     
-    # Update bill with file path
     await db.bills.update_one({"id": bill_id}, {"$set": {"bukti_bayar": filename}})
     
     return {"filename": filename, "message": "Bukti bayar berhasil diupload"}
@@ -563,7 +567,6 @@ async def mark_bill_paid(bill_id: str, current_user: User = Depends(require_admi
     if bill['status'] == "lunas":
         raise HTTPException(status_code=400, detail="Tagihan sudah lunas")
     
-    # Update bill status
     now = datetime.now(timezone.utc)
     await db.bills.update_one({"id": bill_id}, {
         "$set": {
@@ -572,15 +575,17 @@ async def mark_bill_paid(bill_id: str, current_user: User = Depends(require_admi
         }
     })
     
-    # Create transaction (pemasukan)
-    contract = await db.contracts.find_one({"id": bill['contract_id']}, {"_id": 0})
-    room = await db.rooms.find_one({"id": contract['room_id']}, {"_id": 0})
+    rental = await db.rentals.find_one({"id": bill['rental_id']}, {"_id": 0})
+    room = await db.rooms.find_one({"id": rental['room_id']}, {"_id": 0})
+    tenant = await db.tenants.find_one({"id": rental['tenant_id']}, {"_id": 0})
+    
+    sumber = f"Pembayaran {bill.get('keterangan', 'sewa')} - {tenant['nama']} (Kamar {room['nomor_kamar']})"
     
     transaction = Transaction(
         tipe="pemasukan",
         jumlah=bill['jumlah'],
-        sumber=f"Pembayaran sewa kamar {room['nomor_kamar']}",
-        kategori="sewa"
+        sumber=sumber,
+        kategori="sewa" if bill['tipe'] == "sewa" else "lainnya"
     )
     trans_doc = transaction.model_dump()
     trans_doc['tanggal'] = trans_doc['tanggal'].isoformat()
@@ -592,9 +597,10 @@ async def mark_bill_paid(bill_id: str, current_user: User = Depends(require_admi
 
 @api_router.post("/maintenance", response_model=Maintenance)
 async def create_maintenance(maint_input: MaintenanceCreate, current_user: User = Depends(require_admin)):
-    room = await db.rooms.find_one({"id": maint_input.room_id}, {"_id": 0})
-    if not room:
-        raise HTTPException(status_code=404, detail="Kamar tidak ditemukan")
+    if maint_input.room_id:
+        room = await db.rooms.find_one({"id": maint_input.room_id}, {"_id": 0})
+        if not room:
+            raise HTTPException(status_code=404, detail="Kamar tidak ditemukan")
     
     maint_dict = maint_input.model_dump()
     maint_obj = Maintenance(**maint_dict)
@@ -603,9 +609,6 @@ async def create_maintenance(maint_input: MaintenanceCreate, current_user: User 
     doc['updated_at'] = doc['updated_at'].isoformat()
     
     await db.maintenance.insert_one(doc)
-    
-    # Update room status to perbaikan
-    await db.rooms.update_one({"id": maint_input.room_id}, {"$set": {"status": "perbaikan"}})
     
     return maint_obj
 
@@ -639,23 +642,17 @@ async def update_maintenance(maint_id: str, maint_input: MaintenanceUpdate, curr
     update_data = {k: v for k, v in maint_input.model_dump().items() if v is not None}
     update_data['updated_at'] = datetime.now(timezone.utc).isoformat()
     
-    # If status changed to selesai and has biaya, create transaction
     if maint_input.status == "selesai" and maint_input.biaya and maint_input.biaya > 0:
-        room = await db.rooms.find_one({"id": maint['room_id']}, {"_id": 0})
+        lokasi_str = maint['lokasi']
         transaction = Transaction(
             tipe="pengeluaran",
             jumlah=maint_input.biaya,
-            sumber=f"Perbaikan kamar {room['nomor_kamar']}",
+            sumber=f"Perbaikan {lokasi_str}",
             kategori="perbaikan"
         )
         trans_doc = transaction.model_dump()
         trans_doc['tanggal'] = trans_doc['tanggal'].isoformat()
         await db.transactions.insert_one(trans_doc)
-        
-        # Update room status back to previous state (check if has active contract)
-        active_contract = await db.contracts.find_one({"room_id": maint['room_id'], "status": "aktif"}, {"_id": 0})
-        new_status = "terisi" if active_contract else "kosong"
-        await db.rooms.update_one({"id": maint['room_id']}, {"$set": {"status": new_status}})
     
     if update_data:
         await db.maintenance.update_one({"id": maint_id}, {"$set": update_data})
@@ -693,7 +690,6 @@ async def get_transaction_summary(bulan: Optional[int] = None, tahun: Optional[i
     target_month = bulan or now.month
     target_year = tahun or now.year
     
-    # Get start and end of month
     start_date = datetime(target_year, target_month, 1, tzinfo=timezone.utc)
     last_day = monthrange(target_year, target_month)[1]
     end_date = datetime(target_year, target_month, last_day, 23, 59, 59, tzinfo=timezone.utc)
@@ -728,15 +724,13 @@ async def get_transaction_summary(bulan: Optional[int] = None, tahun: Optional[i
 
 @api_router.get("/dashboard", response_model=DashboardStats)
 async def get_dashboard(current_user: User = Depends(get_current_user)):
-    # Count terisi rooms
     rooms = await db.rooms.find({}, {"_id": 0}).to_list(1000)
     jumlah_kamar_terisi = sum(1 for r in rooms if r['status'] == 'terisi')
+    jumlah_kamar_kosong = sum(1 for r in rooms if r['status'] == 'kosong')
     
-    # Count unpaid bills
     bills = await db.bills.find({"status": "belum_bayar"}, {"_id": 0}).to_list(1000)
     jumlah_tagihan_belum_bayar = len(bills)
     
-    # Calculate this month income
     now = datetime.now(timezone.utc)
     start_date = datetime(now.year, now.month, 1, tzinfo=timezone.utc)
     last_day = monthrange(now.year, now.month)[1]
@@ -751,41 +745,43 @@ async def get_dashboard(current_user: User = Depends(get_current_user)):
         if start_date <= trans_date <= end_date:
             pemasukan_bulan_ini += trans['jumlah']
     
-    # Count maintenance reports
     maintenances = await db.maintenance.find({"status": {"$ne": "selesai"}}, {"_id": 0}).to_list(1000)
     jumlah_laporan_kerusakan = len(maintenances)
     
-    # Get recent activities (last 10 transactions and maintenance)
-    all_transactions = await db.transactions.find({}, {"_id": 0}).sort("tanggal", -1).limit(5).to_list(5)
-    all_maintenances = await db.maintenance.find({}, {"_id": 0}).sort("created_at", -1).limit(5).to_list(5)
+    tagihan_belum_bayar_list = []
+    for bill in bills[:10]:
+        rental = await db.rentals.find_one({"id": bill['rental_id']}, {"_id": 0})
+        if rental:
+            tenant = await db.tenants.find_one({"id": rental['tenant_id']}, {"_id": 0})
+            room = await db.rooms.find_one({"id": rental['room_id']}, {"_id": 0})
+            if tenant and room:
+                tagihan_belum_bayar_list.append({
+                    "bill_id": bill['id'],
+                    "tenant_nama": tenant['nama'],
+                    "room_nomor": room['nomor_kamar'],
+                    "jumlah": bill['jumlah'],
+                    "bulan": bill['bulan'],
+                    "tahun": bill['tahun']
+                })
     
-    aktivitas = []
-    for trans in all_transactions:
-        aktivitas.append({
-            "tipe": "transaksi",
-            "deskripsi": trans['sumber'],
-            "jumlah": trans['jumlah'],
-            "tanggal": trans['tanggal'] if isinstance(trans['tanggal'], str) else trans['tanggal'].isoformat()
-        })
-    
-    for maint in all_maintenances:
-        room = await db.rooms.find_one({"id": maint['room_id']}, {"_id": 0})
-        aktivitas.append({
-            "tipe": "perbaikan",
-            "deskripsi": f"Perbaikan kamar {room['nomor_kamar']}: {maint['deskripsi']}",
-            "status": maint['status'],
-            "tanggal": maint['created_at'] if isinstance(maint['created_at'], str) else maint['created_at'].isoformat()
-        })
-    
-    # Sort by date and limit to 10
-    aktivitas = sorted(aktivitas, key=lambda x: x['tanggal'], reverse=True)[:10]
+    kamar_kosong_list = []
+    for room in rooms:
+        if room['status'] == 'kosong':
+            kamar_kosong_list.append({
+                "room_id": room['id'],
+                "nomor_kamar": room['nomor_kamar'],
+                "harga": room['harga'],
+                "fasilitas": room['fasilitas']
+            })
     
     return DashboardStats(
         jumlah_kamar_terisi=jumlah_kamar_terisi,
+        jumlah_kamar_kosong=jumlah_kamar_kosong,
         jumlah_tagihan_belum_bayar=jumlah_tagihan_belum_bayar,
         pemasukan_bulan_ini=pemasukan_bulan_ini,
         jumlah_laporan_kerusakan=jumlah_laporan_kerusakan,
-        aktivitas_terbaru=aktivitas
+        tagihan_belum_bayar=tagihan_belum_bayar_list,
+        kamar_kosong=kamar_kosong_list
     )
 
 app.include_router(api_router)
