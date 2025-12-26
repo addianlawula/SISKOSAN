@@ -214,17 +214,34 @@ const Transactions = () => {
                   </div>
 
                   <div>
-                    <Label htmlFor="kategori">Kategori</Label>
-                    <input
-                      data-testid="transaction-category-input"
-                      id="kategori"
-                      type="text"
-                      value={formData.kategori}
-                      onChange={(e) => setFormData({ ...formData, kategori: e.target.value })}
-                      placeholder="Contoh: operasional, utilitas, dll"
-                      required
-                      className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    />
+                    <Label>Kategori</Label>
+                    <div className="flex space-x-2 mt-1">
+                      <Select 
+                        value={formData.kategori} 
+                        onValueChange={(value) => {
+                          if (value === '__add_new__') {
+                            setCategoryDialogOpen(true);
+                          } else {
+                            setFormData({ ...formData, kategori: value });
+                          }
+                        }} 
+                        required
+                      >
+                        <SelectTrigger data-testid="transaction-category-select" className="flex-1">
+                          <SelectValue placeholder="Pilih kategori" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getFilteredCategories().map((cat) => (
+                            <SelectItem key={cat.id} value={cat.nama}>
+                              {cat.nama.charAt(0).toUpperCase() + cat.nama.slice(1)}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value="__add_new__" className="text-blue-600 font-medium">
+                            + Tambah Kategori Baru
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
                   <div className="flex space-x-2 pt-4">
