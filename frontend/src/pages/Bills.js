@@ -384,13 +384,24 @@ const Bills = () => {
                 )}
 
                 {bill.status === 'lunas' && (
-                  <div className="mt-4 pt-4 border-t border-gray-200">
+                  <div className="space-y-2 mt-4 pt-4 border-t border-gray-200">
+                    <Button
+                      data-testid={`download-kwitansi-${bill.id}`}
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleDownloadKwitansi(bill.id, info.tenant, bill.bulan, bill.tahun)}
+                      className="w-full"
+                    >
+                      <Download size={14} className="mr-1" />
+                      Download Kwitansi
+                    </Button>
+                    
                     {bill.bukti_bayar ? (
                       <a
                         href={`${process.env.REACT_APP_BACKEND_URL}/uploads/${bill.bukti_bayar}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm text-blue-600 hover:text-blue-800 underline flex items-center"
+                        className="text-sm text-blue-600 hover:text-blue-800 underline flex items-center justify-center py-2"
                       >
                         📎 Lihat bukti bayar
                       </a>
