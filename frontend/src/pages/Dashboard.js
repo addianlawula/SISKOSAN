@@ -229,6 +229,62 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Payment Method Dialog */}
+      <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Pilih Cara Bayar</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <label className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                <input
+                  type="radio"
+                  name="cara_bayar"
+                  value="tunai"
+                  checked={caraBayar === 'tunai'}
+                  onChange={(e) => setCaraBayar(e.target.value)}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm font-medium">Tunai</span>
+              </label>
+              <label className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                <input
+                  type="radio"
+                  name="cara_bayar"
+                  value="non_tunai"
+                  checked={caraBayar === 'non_tunai'}
+                  onChange={(e) => setCaraBayar(e.target.value)}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm font-medium">Transfer / Non Tunai</span>
+              </label>
+            </div>
+
+            <div className="flex space-x-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setPaymentDialogOpen(false);
+                  setSelectedBill(null);
+                  setCaraBayar('tunai');
+                }}
+                className="flex-1"
+              >
+                Batal
+              </Button>
+              <Button
+                onClick={confirmMarkPaid}
+                className="flex-1 bg-black hover:bg-gray-800"
+              >
+                Konfirmasi
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
