@@ -148,28 +148,28 @@ const Renters = () => {
   }
 
   return (
-    <div className=\"space-y-6\">
-      <div className=\"flex items-center justify-between\">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className=\"text-3xl font-bold text-gray-900\">Penyewa</h1>
-          <p className=\"text-gray-600 mt-1\">Kelola data penyewa dan kontrak sewa</p>
+          <h1 className="text-3xl font-bold text-gray-900">Penyewa</h1>
+          <p className="text-gray-600 mt-1">Kelola data penyewa dan kontrak sewa</p>
         </div>
         {isAdmin && (
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button data-testid=\"add-renter-button\" className=\"bg-black hover:bg-gray-800\">
-                <Plus size={16} className=\"mr-2\" />
+              <Button data-testid="add-renter-button"className="bg-black hover:bg-gray-800">
+                <Plus size={16} className="mr-2"/>
                 Tambah Penyewa
               </Button>
             </DialogTrigger>
-            <DialogContent className=\"max-w-2xl max-h-[90vh] overflow-y-auto\">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Tambah Penyewa Baru</DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleSubmit} className=\"space-y-4 mt-4\">
+              <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                 {/* Room Selection */}
                 <div>
-                  <Label htmlFor=\"room_id\">Pilih Kamar</Label>
+                  <Label htmlFor=\"room_id">Pilih Kamar</Label>
                   <Select
                     value={formData.room_id}
                     onValueChange={(value) => {
@@ -178,8 +178,8 @@ const Renters = () => {
                     }}
                     required
                   >
-                    <SelectTrigger data-testid=\"rental-room-select\" className=\"mt-1\">
-                      <SelectValue placeholder=\"Pilih kamar\" />
+                    <SelectTrigger data-testid="rental-room-select"className="mt-1">
+                      <SelectValue placeholder=\"Pilih kamar"/>
                     </SelectTrigger>
                     <SelectContent>
                       {availableRooms.map((room) => (
@@ -193,49 +193,49 @@ const Renters = () => {
 
                 {/* Price */}
                 <div>
-                  <Label htmlFor=\"harga\">Harga per Bulan (Rp)</Label>
+                  <Label htmlFor=\"harga">Harga per Bulan (Rp)</Label>
                   <Input
-                    data-testid=\"rental-price-input\"
+                    data-testid="rental-price-input\"
                     id=\"harga\"
                     type=\"number\"
                     value={formData.harga}
                     onChange={(e) => setFormData({ ...formData, harga: e.target.value })}
                     placeholder=\"1000000\"
                     required
-                    className=\"mt-1\"
+                    className="mt-1\"
                   />
                 </div>
 
                 {/* Start Date */}
                 <div>
-                  <Label htmlFor=\"tanggal_mulai\">Tanggal Mulai</Label>
+                  <Label htmlFor=\"tanggal_mulai">Tanggal Mulai</Label>
                   <input
-                    data-testid=\"rental-start-date-input\"
+                    data-testid="rental-start-date-input\"
                     id=\"tanggal_mulai\"
                     type=\"date\"
                     value={formData.tanggal_mulai}
                     onChange={(e) => setFormData({ ...formData, tanggal_mulai: e.target.value })}
                     required
-                    className=\"mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm\"
+                    className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm\"
                   />
                 </div>
 
                 {/* Tenant Selection Mode */}
-                <div className=\"border-t pt-4\">
-                  <div className=\"flex items-center space-x-4 mb-4\">
+                <div className="border-t pt-4">
+                  <div className="flex items-center space-x-4 mb-4">
                     <Button
                       type=\"button\"
-                      variant={!useExistingTenant ? \"default\" : \"outline\"}
+                      variant={!useExistingTenant ? \"default": \"outline\"}
                       onClick={() => setUseExistingTenant(false)}
-                      className={!useExistingTenant ? \"bg-black\" : \"\"}
+                      className={!useExistingTenant ? \"bg-black": \"\"}
                     >
                       Penyewa Baru
                     </Button>
                     <Button
                       type=\"button\"
-                      variant={useExistingTenant ? \"default\" : \"outline\"}
+                      variant={useExistingTenant ? \"default": \"outline\"}
                       onClick={() => setUseExistingTenant(true)}
-                      className={useExistingTenant ? \"bg-black\" : \"\"}
+                      className={useExistingTenant ? \"bg-black": \"\"}
                     >
                       Pilih Penyewa Lama
                     </Button>
@@ -243,14 +243,14 @@ const Renters = () => {
 
                   {useExistingTenant ? (
                     <div>
-                      <Label htmlFor=\"tenant_id\">Pilih Penyewa</Label>
+                      <Label htmlFor=\"tenant_id">Pilih Penyewa</Label>
                       <Select
                         value={formData.tenant_id}
                         onValueChange={(value) => setFormData({ ...formData, tenant_id: value })}
                         required
                       >
-                        <SelectTrigger data-testid=\"existing-tenant-select\" className=\"mt-1\">
-                          <SelectValue placeholder=\"Pilih penyewa\" />
+                        <SelectTrigger data-testid="existing-tenant-select"className="mt-1">
+                          <SelectValue placeholder=\"Pilih penyewa"/>
                         </SelectTrigger>
                         <SelectContent>
                           {tenants.map((tenant) => (
@@ -262,69 +262,69 @@ const Renters = () => {
                       </Select>
                     </div>
                   ) : (
-                    <div className=\"space-y-4\">
+                    <div className="space-y-4">
                       <div>
-                        <Label htmlFor=\"nama\">Nama Lengkap</Label>
+                        <Label htmlFor=\"nama">Nama Lengkap</Label>
                         <Input
-                          data-testid=\"new-tenant-name-input\"
+                          data-testid="new-tenant-name-input\"
                           id=\"nama\"
                           value={formData.nama}
                           onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
                           placeholder=\"John Doe\"
                           required
-                          className=\"mt-1\"
+                          className="mt-1\"
                         />
                       </div>
 
                       <div>
-                        <Label htmlFor=\"telepon\">Telepon</Label>
+                        <Label htmlFor=\"telepon">Telepon</Label>
                         <Input
-                          data-testid=\"new-tenant-phone-input\"
+                          data-testid="new-tenant-phone-input\"
                           id=\"telepon\"
                           value={formData.telepon}
                           onChange={(e) => setFormData({ ...formData, telepon: e.target.value })}
                           placeholder=\"08123456789\"
                           required
-                          className=\"mt-1\"
+                          className="mt-1\"
                         />
                       </div>
 
                       <div>
-                        <Label htmlFor=\"email\">Email (Opsional)</Label>
+                        <Label htmlFor=\"email">Email (Opsional)</Label>
                         <Input
-                          data-testid=\"new-tenant-email-input\"
+                          data-testid="new-tenant-email-input\"
                           id=\"email\"
                           type=\"email\"
                           value={formData.email}
                           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                           placeholder=\"john@example.com\"
-                          className=\"mt-1\"
+                          className="mt-1\"
                         />
                       </div>
 
                       <div>
-                        <Label htmlFor=\"ktp\">Nomor KTP</Label>
+                        <Label htmlFor=\"ktp">Nomor KTP</Label>
                         <Input
-                          data-testid=\"new-tenant-ktp-input\"
+                          data-testid="new-tenant-ktp-input\"
                           id=\"ktp\"
                           value={formData.ktp}
                           onChange={(e) => setFormData({ ...formData, ktp: e.target.value })}
                           placeholder=\"3201234567890001\"
                           required
-                          className=\"mt-1\"
+                          className="mt-1\"
                         />
                       </div>
 
                       <div>
-                        <Label htmlFor=\"alamat\">Alamat</Label>
+                        <Label htmlFor=\"alamat">Alamat</Label>
                         <Textarea
-                          data-testid=\"new-tenant-address-input\"
+                          data-testid="new-tenant-address-input\"
                           id=\"alamat\"
                           value={formData.alamat}
                           onChange={(e) => setFormData({ ...formData, alamat: e.target.value })}
                           placeholder=\"Jl. Contoh No. 123\"
                           required
-                          className=\"mt-1\"
+                          className="mt-1\"
                           rows={3}
                         />
                       </div>
@@ -332,11 +332,11 @@ const Renters = () => {
                   )}
                 </div>
 
-                <div className=\"flex space-x-2 pt-4\">
-                  <Button type=\"button\" variant=\"outline\" onClick={handleCloseDialog} className=\"flex-1\">
+                <div className="flex space-x-2 pt-4">
+                  <Button type=\"button"variant=\"outline"onClick={handleCloseDialog} className="flex-1">
                     Batal
                   </Button>
-                  <Button data-testid=\"save-renter-button\" type=\"submit\" className=\"flex-1 bg-black hover:bg-gray-800\">
+                  <Button data-testid="save-renter-button"type=\"submit"className="flex-1 bg-black hover:bg-gray-800">
                     Simpan
                   </Button>
                 </div>
@@ -347,47 +347,47 @@ const Renters = () => {
       </div>
 
       {/* Tabs for Active and Ended Rentals */}
-      <Tabs defaultValue=\"aktif\" className=\"w-full\">
+      <Tabs defaultValue=\"aktif"className="w-full">
         <TabsList>
-          <TabsTrigger value=\"aktif\">Aktif ({activeRentals.length})</TabsTrigger>
-          <TabsTrigger value=\"selesai\">Riwayat ({endedRentals.length})</TabsTrigger>
+          <TabsTrigger value=\"aktif">Aktif ({activeRentals.length})</TabsTrigger>
+          <TabsTrigger value=\"selesai">Riwayat ({endedRentals.length})</TabsTrigger>
         </TabsList>
 
-        <TabsContent value=\"aktif\" className=\"mt-6\">
-          <div className=\"grid grid-cols-1 lg:grid-cols-2 gap-4\">
+        <TabsContent value=\"aktif"className="mt-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {activeRentals.map((rental) => {
               const tenant = getTenantData(rental.tenant_id);
               if (!tenant) return null;
 
               return (
-                <Card key={rental.id} data-testid={`rental-card-${rental.id}`} className=\"border border-gray-200\">
-                  <CardContent className=\"p-6\">
-                    <div className=\"flex items-start justify-between mb-4\">
+                <Card key={rental.id} data-testid={`rental-card-${rental.id}`} className="border border-gray-200">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between mb-4">
                       <div>
-                        <h3 className=\"text-lg font-bold text-gray-900\">{tenant.nama}</h3>
-                        <p className=\"text-sm text-gray-600\">Kamar {getRoomName(rental.room_id)}</p>
+                        <h3 className="text-lg font-bold text-gray-900">{tenant.nama}</h3>
+                        <p className="text-sm text-gray-600">Kamar {getRoomName(rental.room_id)}</p>
                       </div>
-                      <span className=\"px-3 py-1 bg-black text-white text-xs font-medium rounded-full\">
+                      <span className="px-3 py-1 bg-black text-white text-xs font-medium rounded-full">
                         Aktif
                       </span>
                     </div>
 
-                    <div className=\"space-y-2 mb-4\">
-                      <div className=\"flex items-center text-sm text-gray-600\">
-                        <Calendar size={14} className=\"mr-2\" />
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Calendar size={14} className="mr-2"/>
                         Mulai: {format(new Date(rental.tanggal_mulai), 'dd MMM yyyy', { locale: id })}
                       </div>
-                      <div className=\"flex items-center text-sm text-gray-600\">
-                        <Phone size={14} className=\"mr-2\" />
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Phone size={14} className="mr-2"/>
                         {tenant.telepon}
                       </div>
                       {tenant.email && (
-                        <div className=\"flex items-center text-sm text-gray-600\">
-                          <Mail size={14} className=\"mr-2\" />
+                        <div className="flex items-center text-sm text-gray-600">
+                          <Mail size={14} className="mr-2"/>
                           {tenant.email}
                         </div>
                       )}
-                      <div className=\"flex items-center text-sm font-semibold text-gray-900 mt-3\">
+                      <div className="flex items-center text-sm font-semibold text-gray-900 mt-3">
                         Rp {rental.harga.toLocaleString('id-ID')}/bulan
                       </div>
                     </div>
@@ -398,9 +398,9 @@ const Renters = () => {
                         variant=\"outline\"
                         size=\"sm\"
                         onClick={() => handleEndRental(rental.id)}
-                        className=\"w-full text-red-600 hover:text-red-700 hover:bg-red-50\"
+                        className="w-full text-red-600 hover:text-red-700 hover:bg-red-50\"
                       >
-                        <XCircle size={14} className=\"mr-1\" />
+                        <XCircle size={14} className="mr-1"/>
                         Akhiri Sewa
                       </Button>
                     )}
@@ -411,37 +411,37 @@ const Renters = () => {
           </div>
 
           {activeRentals.length === 0 && (
-            <div className=\"text-center py-12 text-gray-500\">
+            <div className="text-center py-12 text-gray-500">
               <p>Belum ada penyewa aktif</p>
             </div>
           )}
         </TabsContent>
 
-        <TabsContent value=\"selesai\" className=\"mt-6\">
-          <div className=\"grid grid-cols-1 lg:grid-cols-2 gap-4\">
+        <TabsContent value=\"selesai"className="mt-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {endedRentals.map((rental) => {
               const tenant = getTenantData(rental.tenant_id);
               if (!tenant) return null;
 
               return (
-                <Card key={rental.id} data-testid={`ended-rental-card-${rental.id}`} className=\"border border-gray-200 opacity-75\">
-                  <CardContent className=\"p-6\">
-                    <div className=\"flex items-start justify-between mb-4\">
+                <Card key={rental.id} data-testid={`ended-rental-card-${rental.id}`} className="border border-gray-200 opacity-75">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between mb-4">
                       <div>
-                        <h3 className=\"text-lg font-bold text-gray-900\">{tenant.nama}</h3>
-                        <p className=\"text-sm text-gray-600\">Kamar {getRoomName(rental.room_id)}</p>
+                        <h3 className="text-lg font-bold text-gray-900">{tenant.nama}</h3>
+                        <p className="text-sm text-gray-600">Kamar {getRoomName(rental.room_id)}</p>
                       </div>
-                      <span className=\"px-3 py-1 bg-gray-200 text-gray-700 text-xs font-medium rounded-full\">
+                      <span className="px-3 py-1 bg-gray-200 text-gray-700 text-xs font-medium rounded-full">
                         Selesai
                       </span>
                     </div>
 
-                    <div className=\"space-y-2\">
-                      <div className=\"flex items-center text-sm text-gray-600\">
-                        <Calendar size={14} className=\"mr-2\" />
+                    <div className="space-y-2">
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Calendar size={14} className="mr-2"/>
                         {format(new Date(rental.tanggal_mulai), 'dd MMM yyyy', { locale: id })}
                       </div>
-                      <div className=\"flex items-center text-sm font-semibold text-gray-900 mt-3\">
+                      <div className="flex items-center text-sm font-semibold text-gray-900 mt-3">
                         Rp {rental.harga.toLocaleString('id-ID')}/bulan
                       </div>
                     </div>
@@ -452,7 +452,7 @@ const Renters = () => {
           </div>
 
           {endedRentals.length === 0 && (
-            <div className=\"text-center py-12 text-gray-500\">
+            <div className="text-center py-12 text-gray-500">
               <p>Belum ada riwayat sewa</p>
             </div>
           )}
