@@ -7,6 +7,7 @@ import Rooms from './pages/Rooms';
 import Renters from './pages/Renters';
 import Bills from './pages/Bills';
 import Transactions from './pages/Transactions';
+import Users from './pages/Users';
 import Layout from './components/Layout';
 import { Toaster } from './components/ui/sonner';
 import './App.css';
