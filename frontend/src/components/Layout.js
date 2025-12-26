@@ -19,6 +19,10 @@ const Layout = () => {
     { name: 'Keuangan', href: '/transactions', icon: DollarSign },
   ];
 
+  const isSuperAdmin = user?.role === 'super_admin';
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+  const isOwner = user?.role === 'owner';
+
   return (
     <div className="min-h-screen bg-white">
       {/* Mobile Header */}
