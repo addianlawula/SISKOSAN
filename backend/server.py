@@ -249,7 +249,7 @@ def require_super_admin(current_user: User = Depends(get_current_user)):
 # ==================== AUTH ENDPOINTS ====================
 
 @api_router.post("/auth/register", response_model=User)
-async def register(user_input: UserCreate):
+async def register(user_input: UserCreate, current_user: User = Depends(require_super_admin)):
     existing_user = await db.users.find_one({"email": user_input.email}, {"_id": 0})
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -264,6 +264,24 @@ async def register(user_input: UserCreate):
     
     await db.users.insert_one(doc)
     return user_obj
+
+@api_router.get("/users", response_model=List[User])
+async def get_users(current_user: User = Depends(require_super_admin)):
+    users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(1000)
+    for user in users:
+        if isinstance(user['created_at'], str):
+            user['created_at'] = datetime.fromisoformat(user['created_at'])
+    return users
+
+@api_router.delete("/users/{user_id}")
+async def delete_user(user_id: str, current_user: User = Depends(require_super_admin)):
+    if user_id == current_user.id:
+        raise HTTPException(status_code=400, detail="Cannot delete your own account")
+    
+    result = await db.users.delete_one({"id": user_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"message": "User deleted successfully"}
 
 @api_router.post("/auth/login", response_model=Token)
 async def login(user_input: UserLogin):
