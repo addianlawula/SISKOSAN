@@ -369,9 +369,9 @@ const Bills = () => {
                       href={`${process.env.REACT_APP_BACKEND_URL}/uploads/${bill.bukti_bayar}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs text-gray-600 hover:text-gray-900 underline"
+                      className="text-xs text-blue-600 hover:text-blue-800 underline flex items-center"
                     >
-                      Lihat bukti bayar
+                      📎 Lihat bukti bayar
                     </a>
                   </div>
                 )}
