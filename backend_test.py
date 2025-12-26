@@ -3,16 +3,17 @@ import sys
 import json
 from datetime import datetime, timedelta
 
-class KosmanAPITester:
+class SiskosanAPITester:
     def __init__(self, base_url="https://kosman-app.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.token = None
         self.tests_run = 0
         self.tests_passed = 0
         self.created_ids = {
+            'users': [],
             'rooms': [],
             'tenants': [],
-            'contracts': [],
+            'rentals': [],
             'bills': [],
             'maintenance': [],
             'transactions': []
