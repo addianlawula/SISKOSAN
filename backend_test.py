@@ -69,13 +69,13 @@ class SiskosanAPITester:
         """Test authentication endpoints"""
         print("\n=== TESTING AUTHENTICATION ===")
         
-        # Test login with admin credentials
+        # Test login with super admin credentials
         success, response = self.run_test(
-            "Admin Login",
+            "Super Admin Login",
             "POST",
             "auth/login",
             200,
-            data={"email": "admin@kosman.com", "password": "password123"}
+            data={"email": "superadmin@siskosan.com", "password": "superadmin123"}
         )
         
         if success and 'access_token' in response:
@@ -89,6 +89,16 @@ class SiskosanAPITester:
                 "auth/me",
                 200
             )
+            
+            # Test admin login
+            self.run_test(
+                "Admin Login Test",
+                "POST",
+                "auth/login",
+                200,
+                data={"email": "admin@siskosan.com", "password": "password123"}
+            )
+            
             return True
         else:
             print("❌ Failed to get authentication token")
