@@ -138,6 +138,26 @@ const Bills = () => {
     }
   };
 
+  const handleDownloadKwitansi = async (billId, tenantName, bulan, tahun) => {
+    try {
+      const response = await axios.get(`${API}/bills/${billId}/kwitansi`, {
+        responseType: 'blob',
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `kwitansi_${tenantName.replace(/\s/g, '_')}_${bulan}_${tahun}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      
+      toast.success('Kwitansi berhasil didownload');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Gagal download kwitansi');
+    }
+  };
+
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setFormData({
