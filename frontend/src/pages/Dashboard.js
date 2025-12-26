@@ -2,14 +2,17 @@ import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { API, AuthContext } from '../App';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Home, Receipt, DollarSign, Wrench, ArrowUp, ArrowDown } from 'lucide-react';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
+import { Button } from '../components/ui/button';
+import { Home, Receipt, DollarSign, Wrench, CheckCircle, UserPlus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 const Dashboard = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const isAdmin = user?.role === 'admin';
 
   useEffect(() => {
     fetchStats();
@@ -26,6 +29,18 @@ const Dashboard = () => {
     }
   };
 
+  const handleMarkPaid = async (billId) => {
+    if (!window.confirm('Tandai tagihan ini sebagai lunas?')) return;
+
+    try {
+      await axios.post(`${API}/bills/${billId}/mark-paid`);
+      toast.success('Tagihan berhasil ditandai lunas');
+      fetchStats();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Gagal menandai tagihan lunas');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-96">
@@ -39,21 +54,25 @@ const Dashboard = () => {
       title: 'Kamar Terisi',
       value: stats?.jumlah_kamar_terisi || 0,
       icon: Home,
+      color: 'black',
+    },
+    {
+      title: 'Kamar Kosong',
+      value: stats?.jumlah_kamar_kosong || 0,
+      icon: Home,
+      color: 'gray',
     },
     {
       title: 'Tagihan Belum Bayar',
       value: stats?.jumlah_tagihan_belum_bayar || 0,
       icon: Receipt,
+      color: 'gray',
     },
     {
       title: 'Pemasukan Bulan Ini',
       value: `Rp ${(stats?.pemasukan_bulan_ini || 0).toLocaleString('id-ID')}`,
       icon: DollarSign,
-    },
-    {
-      title: 'Laporan Kerusakan',
-      value: stats?.jumlah_laporan_kerusakan || 0,
-      icon: Wrench,
+      color: 'black',
     },
   ];
 
@@ -74,8 +93,10 @@ const Dashboard = () => {
                   <p className="text-sm text-gray-600 mb-1">{stat.title}</p>
                   <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
                 </div>
-                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
-                  <stat.icon size={24} className="text-gray-700" />
+                <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                  stat.color === 'black' ? 'bg-black' : 'bg-gray-100'
+                }`}>
+                  <stat.icon size={24} className={stat.color === 'black' ? 'text-white' : 'text-gray-700'} />
                 </div>
               </div>
             </CardContent>
@@ -83,62 +104,120 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {/* Recent Activities */}
-      <Card className="border border-gray-200">
-        <CardHeader className="border-b border-gray-200">
-          <CardTitle className="text-lg font-semibold">Aktivitas Terbaru</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          {stats?.aktivitas_terbaru && stats.aktivitas_terbaru.length > 0 ? (
-            <div className="divide-y divide-gray-200">
-              {stats.aktivitas_terbaru.map((activity, index) => (
-                <div
-                  key={index}
-                  data-testid={`activity-${index}`}
-                  className="p-4 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start space-x-3">
-                      {activity.tipe === 'transaksi' ? (
-                        activity.jumlah > 0 ? (
-                          <div className="w-8 h-8 bg-black rounded flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <ArrowUp size={16} className="text-white" />
-                          </div>
-                        ) : (
-                          <div className="w-8 h-8 bg-gray-200 rounded flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <ArrowDown size={16} className="text-gray-700" />
-                          </div>
-                        )
-                      ) : (
-                        <div className="w-8 h-8 bg-gray-100 rounded flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <Wrench size={16} className="text-gray-700" />
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900">
-                          {activity.deskripsi}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {format(new Date(activity.tanggal), 'dd MMM yyyy, HH:mm', { locale: id })}
-                        </p>
+      {/* Actionable Sections */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Tagihan Belum Bayar */}
+        <Card className="border border-gray-200">
+          <CardHeader className="border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg font-semibold">Tagihan Belum Bayar</CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/bills')}
+                className="text-sm"
+              >
+                Lihat Semua
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            {stats?.tagihan_belum_bayar && stats.tagihan_belum_bayar.length > 0 ? (
+              <div className="divide-y divide-gray-200">
+                {stats.tagihan_belum_bayar.map((tagihan, index) => (
+                  <div
+                    key={index}
+                    data-testid={`unpaid-bill-${index}`}
+                    className="p-4 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{tagihan.tenant_nama}</p>
+                        <p className="text-xs text-gray-500">Kamar {tagihan.room_nomor}</p>
                       </div>
-                    </div>
-                    {activity.jumlah !== undefined && (
-                      <p className="text-sm font-semibold text-gray-900 ml-2">
-                        Rp {activity.jumlah.toLocaleString('id-ID')}
+                      <p className="text-sm font-semibold text-gray-900">
+                        Rp {tagihan.jumlah.toLocaleString('id-ID')}
                       </p>
+                    </div>
+                    {isAdmin && (
+                      <Button
+                        data-testid={`quick-mark-paid-${index}`}
+                        size="sm"
+                        onClick={() => handleMarkPaid(tagihan.bill_id)}
+                        className="w-full bg-black hover:bg-gray-800"
+                      >
+                        <CheckCircle size={14} className="mr-1" />
+                        Tandai Lunas
+                      </Button>
                     )}
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+            ) : (
+              <div className="p-8 text-center text-gray-500">
+                <Receipt size={32} className="mx-auto mb-2 text-gray-400" />
+                <p className="text-sm">Semua tagihan sudah lunas</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Kamar Kosong */}
+        <Card className="border border-gray-200">
+          <CardHeader className="border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg font-semibold">Kamar Kosong</CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/rooms')}
+                className="text-sm"
+              >
+                Lihat Semua
+              </Button>
             </div>
-          ) : (
-            <div className="p-8 text-center text-gray-500">
-              <p>Belum ada aktivitas</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent className="p-0">
+            {stats?.kamar_kosong && stats.kamar_kosong.length > 0 ? (
+              <div className="divide-y divide-gray-200">
+                {stats.kamar_kosong.slice(0, 5).map((kamar, index) => (
+                  <div
+                    key={index}
+                    data-testid={`empty-room-${index}`}
+                    className="p-4 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">Kamar {kamar.nomor_kamar}</p>
+                        <p className="text-xs text-gray-500">{kamar.fasilitas}</p>
+                      </div>
+                      <p className="text-sm font-semibold text-gray-900">
+                        Rp {kamar.harga.toLocaleString('id-ID')}
+                      </p>
+                    </div>
+                    {isAdmin && (
+                      <Button
+                        data-testid={`quick-add-renter-${index}`}
+                        size="sm"
+                        onClick={() => navigate('/renters', { state: { selectedRoomId: kamar.room_id } })}
+                        className="w-full bg-black hover:bg-gray-800"
+                      >
+                        <UserPlus size={14} className="mr-1" />
+                        Tambah Penyewa
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-8 text-center text-gray-500">
+                <Home size={32} className="mx-auto mb-2 text-gray-400" />
+                <p className="text-sm">Semua kamar terisi</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
