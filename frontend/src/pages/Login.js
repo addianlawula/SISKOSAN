@@ -81,10 +81,6 @@ const Login = () => {
             </Button>
           </form>
         </div>
-
-        <p className="text-center text-sm text-gray-500 mt-6">
-          Demo: admin@siskosan.com / password123
-        </p>
       </div>
     </div>
   );
