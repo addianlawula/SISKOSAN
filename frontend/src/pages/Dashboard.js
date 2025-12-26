@@ -33,11 +33,17 @@ const Dashboard = () => {
   };
 
   const handleMarkPaid = async (billId) => {
-    if (!window.confirm('Tandai tagihan ini sebagai lunas?')) return;
+    setSelectedBill(billId);
+    setPaymentDialogOpen(true);
+  };
 
+  const confirmMarkPaid = async () => {
     try {
-      await axios.post(`${API}/bills/${billId}/mark-paid`);
+      await axios.post(`${API}/bills/${selectedBill}/mark-paid?cara_bayar=${caraBayar}`);
       toast.success('Tagihan berhasil ditandai lunas');
+      setPaymentDialogOpen(false);
+      setSelectedBill(null);
+      setCaraBayar('tunai');
       fetchStats();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Gagal menandai tagihan lunas');
