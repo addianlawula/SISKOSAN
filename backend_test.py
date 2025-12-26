@@ -537,18 +537,21 @@ class SiskosanAPITester:
         for maintenance_id in self.created_ids['maintenance']:
             self.run_test(f"Delete Maintenance {maintenance_id}", "DELETE", f"maintenance/{maintenance_id}", 200)
         
-        for contract_id in self.created_ids['contracts']:
-            self.run_test(f"Delete Contract {contract_id}", "DELETE", f"contracts/{contract_id}", 200)
+        for rental_id in self.created_ids['rentals']:
+            self.run_test(f"End Rental {rental_id}", "POST", f"rentals/{rental_id}/end", 200)
         
         for tenant_id in self.created_ids['tenants']:
             self.run_test(f"Delete Tenant {tenant_id}", "DELETE", f"tenants/{tenant_id}", 200)
         
         for room_id in self.created_ids['rooms']:
             self.run_test(f"Delete Room {room_id}", "DELETE", f"rooms/{room_id}", 200)
+        
+        for user_id in self.created_ids['users']:
+            self.run_test(f"Delete User {user_id}", "DELETE", f"users/{user_id}", 200)
 
 def main():
-    print("🚀 Starting KOSMAN API Testing...")
-    tester = KosmanAPITester()
+    print("🚀 Starting SISKOSAN API Testing...")
+    tester = SiskosanAPITester()
     
     # Test authentication first
     if not tester.test_auth():
@@ -558,9 +561,10 @@ def main():
     # Run all tests
     test_results = {
         'auth': True,  # Already passed
+        'users': tester.test_users(),
         'rooms': tester.test_rooms(),
         'tenants': tester.test_tenants(),
-        'contracts': tester.test_contracts(),
+        'rentals': tester.test_rentals(),
         'bills': tester.test_bills(),
         'maintenance': tester.test_maintenance(),
         'transactions': tester.test_transactions(),
