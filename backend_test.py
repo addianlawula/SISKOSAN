@@ -157,6 +157,7 @@ class SiskosanAPITester:
             
             return True
         return False
+    def test_rooms(self):
         """Test room CRUD operations"""
         print("\n=== TESTING ROOMS ===")
         
