@@ -511,10 +511,12 @@ class SiskosanAPITester:
         if success and response:
             required_fields = [
                 'jumlah_kamar_terisi',
+                'jumlah_kamar_kosong',
                 'jumlah_tagihan_belum_bayar', 
                 'pemasukan_bulan_ini',
                 'jumlah_laporan_kerusakan',
-                'aktivitas_terbaru'
+                'tagihan_belum_bayar',
+                'kamar_kosong'
             ]
             
             for field in required_fields:
