@@ -410,13 +410,10 @@ class SiskosanAPITester:
         """Test maintenance operations"""
         print("\n=== TESTING MAINTENANCE ===")
         
-        if not self.created_ids['rooms']:
-            print("❌ Need rooms to test maintenance")
-            return False
-        
         # Create maintenance report
         maintenance_data = {
-            "room_id": self.created_ids['rooms'][0],
+            "lokasi": "Kamar A1",
+            "room_id": self.created_ids['rooms'][0] if self.created_ids['rooms'] else None,
             "deskripsi": "AC tidak dingin"
         }
         
