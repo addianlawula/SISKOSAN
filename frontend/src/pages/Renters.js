@@ -144,7 +144,7 @@ const Renters = () => {
   const endedRentals = rentals.filter((r) => r.status === 'selesai');
 
   if (loading) {
-    return <div className=\"flex items-center justify-center min-h-96\"><div className=\"text-gray-600\">Loading...</div></div>;
+    return <div className="flex items-center justify-center min-h-96"><div className="text-gray-600">Loading...</div></div>;
   }
 
   return (
