@@ -386,6 +386,109 @@ const Bills = () => {
           <p>Belum ada tagihan</p>
         </div>
       )}
+
+      {/* Payment Method Dialog */}
+      <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Pilih Cara Bayar</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <label className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                <input
+                  type="radio"
+                  name="cara_bayar"
+                  value="tunai"
+                  checked={caraBayar === 'tunai'}
+                  onChange={(e) => setCaraBayar(e.target.value)}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm font-medium">Tunai</span>
+              </label>
+              <label className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                <input
+                  type="radio"
+                  name="cara_bayar"
+                  value="non_tunai"
+                  checked={caraBayar === 'non_tunai'}
+                  onChange={(e) => setCaraBayar(e.target.value)}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm font-medium">Transfer / Non Tunai</span>
+              </label>
+            </div>
+
+            <div className="flex space-x-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setPaymentDialogOpen(false);
+                  setSelectedBill(null);
+                  setCaraBayar('tunai');
+                }}
+                className="flex-1"
+              >
+                Batal
+              </Button>
+              <Button
+                data-testid="confirm-payment-button"
+                onClick={confirmMarkPaid}
+                className="flex-1 bg-black hover:bg-gray-800"
+              >
+                Konfirmasi
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Upload Proof Dialog */}
+      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Upload Bukti Pembayaran</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div>
+              <Label>Pilih File (Opsional)</Label>
+              <input
+                data-testid="upload-proof-input"
+                type="file"
+                accept="image/*,.pdf"
+                onChange={(e) => setUploadFile(e.target.files[0])}
+                className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              />
+              <p className="text-xs text-gray-500 mt-1">Format: JPG, PNG, PDF (Max 5MB)</p>
+            </div>
+            <div className="flex space-x-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setUploadDialogOpen(false);
+                  setUploadFile(null);
+                  setSelectedBill(null);
+                  setCaraBayar('tunai');
+                  fetchData();
+                }}
+                className="flex-1"
+              >
+                Lewati
+              </Button>
+              <Button
+                data-testid="confirm-upload-button"
+                onClick={handleUploadProof}
+                disabled={!uploadFile}
+                className="flex-1 bg-black hover:bg-gray-800"
+              >
+                Upload
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
