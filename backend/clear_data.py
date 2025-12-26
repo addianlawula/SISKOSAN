@@ -12,15 +12,20 @@ async def clear_all_data():
     client = AsyncIOMotorClient(mongo_url)
     db = client[os.environ['DB_NAME']]
     
-    # Collections to clear (keep users)
-    collections = ['rooms', 'tenants', 'contracts', 'bills', 'maintenance', 'transactions']
+    # Collections to clear
+    collections = ['rooms', 'tenants', 'rentals', 'bills', 'maintenance', 'transactions']
     
     for collection in collections:
         result = await db[collection].delete_many({})
         print(f"✓ Deleted {result.deleted_count} documents from {collection}")
     
-    print("\n✓ All data cleared successfully (users kept)")
-    print("You can now test with fresh data!")
+    # Delete users except super admin
+    result = await db.users.delete_many({"role": {"$ne": "super_admin"}})
+    print(f"✓ Deleted {result.deleted_count} users (kept super admin)")
+    
+    print("\n✓ All data cleared successfully!")
+    print("✓ Super Admin (superadmin@siskosan.com) kept")
+    print("\nReady for fresh testing!")
     
     client.close()
 
