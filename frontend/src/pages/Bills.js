@@ -5,30 +5,29 @@ import { Button } from '../components/ui/button';
 import { Label } from '../components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Card, CardContent } from '../components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { toast } from 'sonner';
-import { Plus, CheckCircle, Upload, Download } from 'lucide-react';
+import { Plus, CheckCircle, Zap } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 
 const Bills = () => {
   const [bills, setBills] = useState([]);
-  const [contracts, setContracts] = useState([]);
+  const [rentals, setRentals] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [tenants, setTenants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-  const [selectedBillForUpload, setSelectedBillForUpload] = useState(null);
-  const [uploadFile, setUploadFile] = useState(null);
+  const [generating, setGenerating] = useState(false);
   const { user } = useContext(AuthContext);
   const isAdmin = user?.role === 'admin';
 
   const [formData, setFormData] = useState({
-    contract_id: '',
+    rental_id: '',
     bulan: '',
     tahun: '',
     jumlah: '',
+    keterangan: '',
   });
 
   useEffect(() => {
@@ -37,14 +36,14 @@ const Bills = () => {
 
   const fetchData = async () => {
     try {
-      const [billsRes, contractsRes, roomsRes, tenantsRes] = await Promise.all([
+      const [billsRes, rentalsRes, roomsRes, tenantsRes] = await Promise.all([
         axios.get(`${API}/bills`),
-        axios.get(`${API}/contracts`),
+        axios.get(`${API}/rentals`),
         axios.get(`${API}/rooms`),
         axios.get(`${API}/tenants`),
       ]);
       setBills(billsRes.data);
-      setContracts(contractsRes.data);
+      setRentals(rentalsRes.data);
       setRooms(roomsRes.data);
       setTenants(tenantsRes.data);
     } catch (error) {
@@ -54,43 +53,38 @@ const Bills = () => {
     }
   };
 
+  const handleGenerateMonthly = async () => {
+    setGenerating(true);
+    try {
+      const response = await axios.post(`${API}/bills/generate-monthly`);
+      toast.success(response.data.message);
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Gagal generate tagihan');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     const payload = {
-      ...formData,
+      rental_id: formData.rental_id,
       bulan: parseInt(formData.bulan),
       tahun: parseInt(formData.tahun),
       jumlah: parseFloat(formData.jumlah),
+      tipe: 'tambahan',
+      keterangan: formData.keterangan,
     };
 
     try {
       await axios.post(`${API}/bills`, payload);
-      toast.success('Tagihan berhasil dibuat');
+      toast.success('Tagihan tambahan berhasil dibuat');
       fetchData();
       handleCloseDialog();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Gagal membuat tagihan');
-    }
-  };
-
-  const handleUploadProof = async () => {
-    if (!uploadFile || !selectedBillForUpload) return;
-
-    const formData = new FormData();
-    formData.append('file', uploadFile);
-
-    try {
-      await axios.post(`${API}/bills/${selectedBillForUpload}/upload`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      toast.success('Bukti bayar berhasil diupload');
-      setUploadDialogOpen(false);
-      setUploadFile(null);
-      setSelectedBillForUpload(null);
-      fetchData();
-    } catch (error) {
-      toast.error(error.response?.data?.detail || 'Gagal upload bukti bayar');
     }
   };
 
@@ -99,7 +93,7 @@ const Bills = () => {
 
     try {
       await axios.post(`${API}/bills/${billId}/mark-paid`);
-      toast.success('Tagihan berhasil ditandai lunas dan pemasukan tercatat');
+      toast.success('Tagihan berhasil ditandai lunas');
       fetchData();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Gagal menandai tagihan lunas');
@@ -109,18 +103,19 @@ const Bills = () => {
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setFormData({
-      contract_id: '',
+      rental_id: '',
       bulan: '',
       tahun: '',
       jumlah: '',
+      keterangan: '',
     });
   };
 
-  const getContractInfo = (contractId) => {
-    const contract = contracts.find((c) => c.id === contractId);
-    if (!contract) return { tenant: '-', room: '-' };
-    const tenant = tenants.find((t) => t.id === contract.tenant_id);
-    const room = rooms.find((r) => r.id === contract.room_id);
+  const getRentalInfo = (rentalId) => {
+    const rental = rentals.find((c) => c.id === rentalId);
+    if (!rental) return { tenant: '-', room: '-' };
+    const tenant = tenants.find((t) => t.id === rental.tenant_id);
+    const room = rooms.find((r) => r.id === rental.room_id);
     return {
       tenant: tenant ? tenant.nama : '-',
       room: room ? room.nomor_kamar : '-',
@@ -132,7 +127,7 @@ const Bills = () => {
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
   ];
 
-  const activeContracts = contracts.filter((c) => c.status === 'aktif');
+  const activeRentals = rentals.filter((c) => c.status === 'aktif');
 
   if (loading) {
     return <div className="flex items-center justify-center min-h-96"><div className="text-gray-600">Loading...</div></div>;
@@ -146,103 +141,125 @@ const Bills = () => {
           <p className="text-gray-600 mt-1">Kelola tagihan pembayaran sewa</p>
         </div>
         {isAdmin && (
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button data-testid="add-bill-button" className="bg-black hover:bg-gray-800">
-                <Plus size={16} className="mr-2" />
-                Buat Tagihan Manual
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Buat Tagihan Manual</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-                <div>
-                  <Label htmlFor="contract_id">Kontrak</Label>
-                  <Select value={formData.contract_id} onValueChange={(value) => {
-                    const contract = contracts.find(c => c.id === value);
-                    setFormData({ ...formData, contract_id: value, jumlah: contract ? contract.harga.toString() : '' });
-                  }} required>
-                    <SelectTrigger data-testid="bill-contract-select" className="mt-1">
-                      <SelectValue placeholder="Pilih kontrak" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {activeContracts.map((contract) => {
-                        const info = getContractInfo(contract.id);
-                        return (
-                          <SelectItem key={contract.id} value={contract.id}>
-                            {info.tenant} - Kamar {info.room}
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
+          <div className="flex space-x-2">
+            <Button
+              data-testid="generate-monthly-button"
+              onClick={handleGenerateMonthly}
+              disabled={generating}
+              className="bg-black hover:bg-gray-800"
+            >
+              <Zap size={16} className="mr-2" />
+              {generating ? 'Generating...' : 'Generate Tagihan Bulan Ini'}
+            </Button>
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button data-testid="add-bill-button" variant="outline">
+                  <Plus size={16} className="mr-2" />
+                  Tagihan Tambahan
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Buat Tagihan Tambahan</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                   <div>
-                    <Label htmlFor="bulan">Bulan</Label>
-                    <Select value={formData.bulan} onValueChange={(value) => setFormData({ ...formData, bulan: value })} required>
-                      <SelectTrigger data-testid="bill-month-select" className="mt-1">
-                        <SelectValue placeholder="Pilih bulan" />
+                    <Label>Penyewa</Label>
+                    <Select value={formData.rental_id} onValueChange={(value) => {
+                      const rental = rentals.find(c => c.id === value);
+                      setFormData({ ...formData, rental_id: value, jumlah: rental ? rental.harga.toString() : '' });
+                    }} required>
+                      <SelectTrigger data-testid="bill-rental-select" className="mt-1">
+                        <SelectValue placeholder="Pilih penyewa" />
                       </SelectTrigger>
                       <SelectContent>
-                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
-                          <SelectItem key={m} value={m.toString()}>
-                            {monthNames[m - 1]}
-                          </SelectItem>
-                        ))}
+                        {activeRentals.map((rental) => {
+                          const info = getRentalInfo(rental.id);
+                          return (
+                            <SelectItem key={rental.id} value={rental.id}>
+                              {info.tenant} - Kamar {info.room}
+                            </SelectItem>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                   </div>
 
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Bulan</Label>
+                      <Select value={formData.bulan} onValueChange={(value) => setFormData({ ...formData, bulan: value })} required>
+                        <SelectTrigger data-testid="bill-month-select" className="mt-1">
+                          <SelectValue placeholder="Pilih bulan" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                            <SelectItem key={m} value={m.toString()}>
+                              {monthNames[m - 1]}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label>Tahun</Label>
+                      <input
+                        data-testid="bill-year-input"
+                        type="number"
+                        value={formData.tahun}
+                        onChange={(e) => setFormData({ ...formData, tahun: e.target.value })}
+                        placeholder="2025"
+                        required
+                        className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      />
+                    </div>
+                  </div>
+
                   <div>
-                    <Label htmlFor="tahun">Tahun</Label>
+                    <Label>Jumlah (Rp)</Label>
                     <input
-                      data-testid="bill-year-input"
-                      id="tahun"
+                      data-testid="bill-amount-input"
                       type="number"
-                      value={formData.tahun}
-                      onChange={(e) => setFormData({ ...formData, tahun: e.target.value })}
-                      placeholder="2024"
+                      value={formData.jumlah}
+                      onChange={(e) => setFormData({ ...formData, jumlah: e.target.value })}
+                      placeholder="100000"
                       required
                       className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                     />
                   </div>
-                </div>
 
-                <div>
-                  <Label htmlFor="jumlah">Jumlah (Rp)</Label>
-                  <input
-                    data-testid="bill-amount-input"
-                    id="jumlah"
-                    type="number"
-                    value={formData.jumlah}
-                    onChange={(e) => setFormData({ ...formData, jumlah: e.target.value })}
-                    placeholder="1000000"
-                    required
-                    className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  />
-                </div>
+                  <div>
+                    <Label>Keterangan</Label>
+                    <input
+                      data-testid="bill-note-input"
+                      type="text"
+                      value={formData.keterangan}
+                      onChange={(e) => setFormData({ ...formData, keterangan: e.target.value })}
+                      placeholder="Contoh: Biaya listrik tambahan"
+                      required
+                      className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    />
+                  </div>
 
-                <div className="flex space-x-2 pt-4">
-                  <Button type="button" variant="outline" onClick={handleCloseDialog} className="flex-1">
-                    Batal
-                  </Button>
-                  <Button data-testid="save-bill-button" type="submit" className="flex-1 bg-black hover:bg-gray-800">
-                    Simpan
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
+                  <div className="flex space-x-2 pt-4">
+                    <Button type="button" variant="outline" onClick={handleCloseDialog} className="flex-1">
+                      Batal
+                    </Button>
+                    <Button data-testid="save-bill-button" type="submit" className="flex-1 bg-black hover:bg-gray-800">
+                      Simpan
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
         )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {bills.map((bill) => {
-          const info = getContractInfo(bill.contract_id);
+          const info = getRentalInfo(bill.rental_id);
           return (
             <Card key={bill.id} data-testid={`bill-card-${bill.id}`} className="border border-gray-200">
               <CardContent className="p-6">
@@ -250,8 +267,13 @@ const Bills = () => {
                   <div>
                     <h3 className="text-lg font-bold text-gray-900">{info.tenant}</h3>
                     <p className="text-sm text-gray-600">Kamar {info.room}</p>
+                    {bill.tipe === 'tambahan' && (
+                      <p className="text-xs text-gray-500 mt-1">Tagihan Tambahan</p>
+                    )}
                   </div>
-                  <span className={`status-badge status-${bill.status.replace('_', '-')}`}>
+                  <span className={`px-3 py-1 text-xs font-medium rounded-full ${
+                    bill.status === 'lunas' ? 'bg-black text-white' : 'bg-gray-200 text-gray-700'
+                  }`}>
                     {bill.status === 'belum_bayar' ? 'Belum Bayar' : 'Lunas'}
                   </span>
                 </div>
@@ -263,6 +285,12 @@ const Bills = () => {
                       {monthNames[bill.bulan - 1]} {bill.tahun}
                     </span>
                   </div>
+                  {bill.keterangan && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Keterangan</span>
+                      <span className="text-sm text-gray-700">{bill.keterangan}</span>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Jumlah</span>
                     <span className="text-sm font-semibold text-gray-900">
@@ -280,45 +308,15 @@ const Bills = () => {
                 </div>
 
                 {isAdmin && bill.status === 'belum_bayar' && (
-                  <div className="flex space-x-2">
-                    <Button
-                      data-testid={`upload-proof-${bill.id}`}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedBillForUpload(bill.id);
-                        setUploadDialogOpen(true);
-                      }}
-                      className="flex-1"
-                    >
-                      <Upload size={14} className="mr-1" />
-                      Upload Bukti
-                    </Button>
-                    <Button
-                      data-testid={`mark-paid-${bill.id}`}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleMarkPaid(bill.id)}
-                      className="flex-1"
-                    >
-                      <CheckCircle size={14} className="mr-1" />
-                      Tandai Lunas
-                    </Button>
-                  </div>
-                )}
-
-                {bill.bukti_bayar && (
-                  <div className="mt-4 pt-4 border-t border-gray-200">
-                    <a
-                      href={`${process.env.REACT_APP_BACKEND_URL}/uploads/${bill.bukti_bayar}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-gray-600 hover:text-gray-900 flex items-center"
-                    >
-                      <Download size={12} className="mr-1" />
-                      Lihat bukti bayar
-                    </a>
-                  </div>
+                  <Button
+                    data-testid={`mark-paid-${bill.id}`}
+                    size="sm"
+                    onClick={() => handleMarkPaid(bill.id)}
+                    className="w-full bg-black hover:bg-gray-800"
+                  >
+                    <CheckCircle size={14} className="mr-1" />
+                    Tandai Lunas
+                  </Button>
                 )}
               </CardContent>
             </Card>
@@ -331,50 +329,6 @@ const Bills = () => {
           <p>Belum ada tagihan</p>
         </div>
       )}
-
-      {/* Upload Dialog */}
-      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Upload Bukti Pembayaran</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 mt-4">
-            <div>
-              <Label htmlFor="file">Pilih File</Label>
-              <input
-                data-testid="upload-proof-input"
-                id="file"
-                type="file"
-                accept="image/*,.pdf"
-                onChange={(e) => setUploadFile(e.target.files[0])}
-                className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              />
-            </div>
-            <div className="flex space-x-2 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setUploadDialogOpen(false);
-                  setUploadFile(null);
-                  setSelectedBillForUpload(null);
-                }}
-                className="flex-1"
-              >
-                Batal
-              </Button>
-              <Button
-                data-testid="confirm-upload-button"
-                onClick={handleUploadProof}
-                disabled={!uploadFile}
-                className="flex-1 bg-black hover:bg-gray-800"
-              >
-                Upload
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

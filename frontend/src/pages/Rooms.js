@@ -5,7 +5,6 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Card, CardContent } from '../components/ui/card';
 import { toast } from 'sonner';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
@@ -22,7 +21,6 @@ const Rooms = () => {
     nomor_kamar: '',
     harga: '',
     fasilitas: '',
-    status: 'kosong',
   });
 
   useEffect(() => {
@@ -76,7 +74,6 @@ const Rooms = () => {
       nomor_kamar: room.nomor_kamar,
       harga: room.harga,
       fasilitas: room.fasilitas,
-      status: room.status,
     });
     setDialogOpen(true);
   };
@@ -88,7 +85,6 @@ const Rooms = () => {
       nomor_kamar: '',
       harga: '',
       fasilitas: '',
-      status: 'kosong',
     });
   };
 
@@ -117,10 +113,9 @@ const Rooms = () => {
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                 <div>
-                  <Label htmlFor="nomor_kamar">Nomor Kamar</Label>
+                  <Label>Nomor Kamar</Label>
                   <Input
                     data-testid="room-number-input"
-                    id="nomor_kamar"
                     value={formData.nomor_kamar}
                     onChange={(e) => setFormData({ ...formData, nomor_kamar: e.target.value })}
                     placeholder="A1"
@@ -130,10 +125,9 @@ const Rooms = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="harga">Harga (Rp)</Label>
+                  <Label>Harga (Rp/bulan)</Label>
                   <Input
                     data-testid="room-price-input"
-                    id="harga"
                     type="number"
                     value={formData.harga}
                     onChange={(e) => setFormData({ ...formData, harga: e.target.value })}
@@ -144,10 +138,9 @@ const Rooms = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="fasilitas">Fasilitas</Label>
+                  <Label>Fasilitas</Label>
                   <Input
                     data-testid="room-facilities-input"
-                    id="fasilitas"
                     value={formData.fasilitas}
                     onChange={(e) => setFormData({ ...formData, fasilitas: e.target.value })}
                     placeholder="Kamar mandi dalam, AC, WiFi"
@@ -155,22 +148,6 @@ const Rooms = () => {
                     className="mt-1"
                   />
                 </div>
-
-                {editingRoom && (
-                  <div>
-                    <Label htmlFor="status">Status</Label>
-                    <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
-                      <SelectTrigger data-testid="room-status-select" className="mt-1">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="kosong">Kosong</SelectItem>
-                        <SelectItem value="terisi">Terisi</SelectItem>
-                        <SelectItem value="perbaikan">Perbaikan</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
 
                 <div className="flex space-x-2 pt-4">
                   <Button type="button" variant="outline" onClick={handleCloseDialog} className="flex-1">
@@ -197,8 +174,10 @@ const Rooms = () => {
                     Rp {room.harga.toLocaleString('id-ID')}/bulan
                   </p>
                 </div>
-                <span className={`status-badge status-${room.status}`}>
-                  {room.status}
+                <span className={`px-3 py-1 text-xs font-medium rounded-full ${
+                  room.status === 'terisi' ? 'bg-black text-white' : 'bg-gray-200 text-gray-700'
+                }`}>
+                  {room.status === 'kosong' ? 'Kosong' : 'Terisi'}
                 </span>
               </div>
 
