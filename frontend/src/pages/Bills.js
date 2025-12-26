@@ -19,6 +19,11 @@ const Bills = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [selectedBill, setSelectedBill] = useState(null);
+  const [caraBayar, setCaraBayar] = useState('tunai');
+  const [uploadFile, setUploadFile] = useState(null);
   const { user } = useContext(AuthContext);
   const isAdmin = user?.role === 'admin';
 
