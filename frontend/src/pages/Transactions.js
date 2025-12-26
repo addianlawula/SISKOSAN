@@ -258,6 +258,51 @@ const Transactions = () => {
           )}
         </div>
       </div>
+      {/* Category Dialog */}
+      <Dialog open={categoryDialogOpen} onOpenChange={setCategoryDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Tambah Kategori Baru</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleAddCategory} className="space-y-4 mt-4">
+            <div>
+              <Label htmlFor="nama">Nama Kategori</Label>
+              <input
+                id="nama"
+                type="text"
+                value={newCategory.nama}
+                onChange={(e) => setNewCategory({ ...newCategory, nama: e.target.value })}
+                placeholder="Masukkan nama kategori"
+                required
+                className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="tipe">Tipe Kategori</Label>
+              <Select value={newCategory.tipe} onValueChange={(value) => setNewCategory({ ...newCategory, tipe: value })} required>
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pemasukan">Pemasukan</SelectItem>
+                  <SelectItem value="pengeluaran">Pengeluaran</SelectItem>
+                  <SelectItem value="both">Keduanya</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex space-x-2 pt-4">
+              <Button type="button" variant="outline" onClick={() => setCategoryDialogOpen(false)} className="flex-1">
+                Batal
+              </Button>
+              <Button type="submit" className="flex-1 bg-black hover:bg-gray-800">
+                Simpan
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Summary Filter */}
       <div className="flex items-center space-x-4">
