@@ -18,7 +18,7 @@ async def create_admin():
     db = client[os.environ['DB_NAME']]
     
     # Check if admin exists
-    existing = await db.users.find_one({"email": "admin@kosman.com"}, {"_id": 0})
+    existing = await db.users.find_one({"email": "admin@siskosan.com"}, {"_id": 0})
     if existing:
         print("Admin user already exists")
         return
@@ -27,7 +27,7 @@ async def create_admin():
     hashed_password = pwd_context.hash("password123")
     admin = {
         "id": str(uuid.uuid4()),
-        "email": "admin@kosman.com",
+        "email": "admin@siskosan.com",
         "password": hashed_password,
         "role": "admin",
         "created_at": datetime.now(timezone.utc).isoformat()
@@ -35,7 +35,7 @@ async def create_admin():
     
     await db.users.insert_one(admin)
     print("Admin user created successfully!")
-    print("Email: admin@kosman.com")
+    print("Email: admin@siskosan.com")
     print("Password: password123")
     
     client.close()
