@@ -343,6 +343,12 @@ const Bills = () => {
                       </span>
                     </div>
                   )}
+                  {bill.cara_bayar && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Cara Bayar</span>
+                      <span className="text-xs text-gray-700 capitalize">{bill.cara_bayar.replace('_', ' ')}</span>
+                    </div>
+                  )}
                 </div>
 
                 {isAdmin && bill.status === 'belum_bayar' && (
@@ -355,6 +361,19 @@ const Bills = () => {
                     <CheckCircle size={14} className="mr-1" />
                     Tandai Lunas
                   </Button>
+                )}
+
+                {bill.bukti_bayar && (
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <a
+                      href={`${process.env.REACT_APP_BACKEND_URL}/uploads/${bill.bukti_bayar}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-gray-600 hover:text-gray-900 underline"
+                    >
+                      Lihat bukti bayar
+                    </a>
+                  </div>
                 )}
               </CardContent>
             </Card>
