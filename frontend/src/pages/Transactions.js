@@ -14,9 +14,11 @@ import { id } from 'date-fns/locale';
 
 const Transactions = () => {
   const [transactions, setTransactions] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const { user } = useContext(AuthContext);
@@ -27,6 +29,11 @@ const Transactions = () => {
     jumlah: '',
     sumber: '',
     kategori: '',
+  });
+
+  const [newCategory, setNewCategory] = useState({
+    nama: '',
+    tipe: 'both',
   });
 
   useEffect(() => {
