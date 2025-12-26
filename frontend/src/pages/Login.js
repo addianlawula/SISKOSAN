@@ -35,9 +35,9 @@ const Login = () => {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-black rounded-lg mb-4">
-            <span className="text-white text-2xl font-bold">K</span>
+            <span className="text-white text-2xl font-bold">S</span>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">KOSMAN</h1>
+          <h1 className="text-3xl font-bold text-gray-900">SISKOSAN</h1>
           <p className="text-gray-600 mt-2">Sistem Manajemen Kost</p>
         </div>
 
@@ -51,7 +51,7 @@ const Login = () => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@kosman.com"
+                placeholder="admin@siskosan.com"
                 required
                 className="mt-1"
               />
@@ -83,7 +83,7 @@ const Login = () => {
         </div>
 
         <p className="text-center text-sm text-gray-500 mt-6">
-          Demo: admin@kosman.com / password123
+          Demo: admin@siskosan.com / password123
         </p>
       </div>
     </div>

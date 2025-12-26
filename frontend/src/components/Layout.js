@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { AuthContext } from '../App';
 import { Button } from './ui/button';
-import { LayoutDashboard, Home, Users, FileText, Receipt, Wrench, DollarSign, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Home, Users, Receipt, DollarSign, LogOut, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 
 const Layout = () => {
@@ -14,10 +14,8 @@ const Layout = () => {
   const navigation = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
     { name: 'Kamar', href: '/rooms', icon: Home },
-    { name: 'Penghuni', href: '/tenants', icon: Users },
-    { name: 'Kontrak', href: '/contracts', icon: FileText },
+    { name: 'Penyewa', href: '/renters', icon: Users },
     { name: 'Tagihan', href: '/bills', icon: Receipt },
-    { name: 'Perbaikan', href: '/maintenance', icon: Wrench },
     { name: 'Keuangan', href: '/transactions', icon: DollarSign },
   ];
 
@@ -27,9 +25,9 @@ const Layout = () => {
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 z-50">
         <div className="flex items-center space-x-3">
           <div className="w-8 h-8 bg-black rounded flex items-center justify-center">
-            <span className="text-white text-sm font-bold">K</span>
+            <span className="text-white text-sm font-bold">S</span>
           </div>
-          <span className="text-lg font-semibold">KOSMAN</span>
+          <span className="text-lg font-semibold">SISKOSAN</span>
         </div>
         <Button
           data-testid="mobile-menu-toggle"
@@ -52,9 +50,9 @@ const Layout = () => {
           <div className="h-16 flex items-center px-6 border-b border-gray-200">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-black rounded flex items-center justify-center">
-                <span className="text-white text-sm font-bold">K</span>
+                <span className="text-white text-sm font-bold">S</span>
               </div>
-              <span className="text-lg font-semibold">KOSMAN</span>
+              <span className="text-lg font-semibold">SISKOSAN</span>
             </div>
           </div>
 

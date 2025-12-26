@@ -4,10 +4,8 @@ import axios from 'axios';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Rooms from './pages/Rooms';
-import Tenants from './pages/Tenants';
-import Contracts from './pages/Contracts';
+import Renters from './pages/Renters';
 import Bills from './pages/Bills';
-import Maintenance from './pages/Maintenance';
 import Transactions from './pages/Transactions';
 import Layout from './components/Layout';
 import { Toaster } from './components/ui/sonner';
@@ -77,10 +75,8 @@ function App() {
           >
             <Route index element={<Dashboard />} />
             <Route path="rooms" element={<Rooms />} />
-            <Route path="tenants" element={<Tenants />} />
-            <Route path="contracts" element={<Contracts />} />
+            <Route path="renters" element={<Renters />} />
             <Route path="bills" element={<Bills />} />
-            <Route path="maintenance" element={<Maintenance />} />
             <Route path="transactions" element={<Transactions />} />
           </Route>
         </Routes>
