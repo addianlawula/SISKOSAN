@@ -85,6 +85,30 @@ const Transactions = () => {
     });
   };
 
+  const handleAddCategory = async (e) => {
+    e.preventDefault();
+
+    try {
+      await axios.post(`${API}/categories`, newCategory);
+      toast.success('Kategori berhasil ditambahkan');
+      
+      const categoriesRes = await axios.get(`${API}/categories`);
+      setCategories(categoriesRes.data);
+      
+      setFormData({ ...formData, kategori: newCategory.nama });
+      setCategoryDialogOpen(false);
+      setNewCategory({ nama: '', tipe: 'both' });
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Gagal menambahkan kategori');
+    }
+  };
+
+  const getFilteredCategories = () => {
+    return categories.filter(cat => 
+      cat.tipe === formData.tipe || cat.tipe === 'both'
+    );
+  };
+
   const exportToCSV = () => {
     const headers = ['Tanggal', 'Tipe', 'Sumber', 'Kategori', 'Jumlah'];
     const rows = transactions.map((t) => [
