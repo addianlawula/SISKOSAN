@@ -363,16 +363,32 @@ const Bills = () => {
                   </Button>
                 )}
 
-                {bill.bukti_bayar && (
+                {bill.status === 'lunas' && (
                   <div className="mt-4 pt-4 border-t border-gray-200">
-                    <a
-                      href={`${process.env.REACT_APP_BACKEND_URL}/uploads/${bill.bukti_bayar}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-blue-600 hover:text-blue-800 underline flex items-center"
-                    >
-                      📎 Lihat bukti bayar
-                    </a>
+                    {bill.bukti_bayar ? (
+                      <a
+                        href={`${process.env.REACT_APP_BACKEND_URL}/uploads/${bill.bukti_bayar}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 hover:text-blue-800 underline flex items-center"
+                      >
+                        📎 Lihat bukti bayar
+                      </a>
+                    ) : (
+                      isAdmin && bill.cara_bayar === 'non_tunai' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedBill(bill.id);
+                            setUploadDialogOpen(true);
+                          }}
+                          className="w-full text-sm"
+                        >
+                          Upload Bukti Bayar
+                        </Button>
+                      )
+                    )}
                   </div>
                 )}
               </CardContent>
