@@ -10,6 +10,9 @@ import { toast } from 'sonner';
 const Dashboard = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [selectedBill, setSelectedBill] = useState(null);
+  const [caraBayar, setCaraBayar] = useState('tunai');
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const isAdmin = user?.role === 'admin';
