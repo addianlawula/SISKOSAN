@@ -575,7 +575,7 @@ async def upload_payment_proof(bill_id: str, file: UploadFile = File(...), curre
     return {"filename": filename, "message": "Bukti bayar berhasil diupload"}
 
 @api_router.post("/bills/{bill_id}/mark-paid")
-async def mark_bill_paid(bill_id: str, current_user: User = Depends(require_admin)):
+async def mark_bill_paid(bill_id: str, cara_bayar: Literal["tunai", "non_tunai"], current_user: User = Depends(require_admin)):
     bill = await db.bills.find_one({"id": bill_id}, {"_id": 0})
     if not bill:
         raise HTTPException(status_code=404, detail="Tagihan tidak ditemukan")
@@ -587,6 +587,7 @@ async def mark_bill_paid(bill_id: str, current_user: User = Depends(require_admi
     await db.bills.update_one({"id": bill_id}, {
         "$set": {
             "status": "lunas",
+            "cara_bayar": cara_bayar,
             "tanggal_bayar": now.isoformat()
         }
     })
