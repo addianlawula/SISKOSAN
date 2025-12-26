@@ -426,6 +426,21 @@ async def create_rental(rental_input: RentalCreate, current_user: User = Depends
     await db.rentals.insert_one(doc)
     await db.rooms.update_one({"id": rental_input.room_id}, {"$set": {"status": "terisi"}})
     
+    # Auto-generate tagihan bulan pertama
+    start_month = tanggal_mulai.month
+    start_year = tanggal_mulai.year
+    
+    bill = Bill(
+        rental_id=rental_obj.id,
+        bulan=start_month,
+        tahun=start_year,
+        jumlah=rental_input.harga,
+        tipe="sewa"
+    )
+    bill_doc = bill.model_dump()
+    bill_doc['created_at'] = bill_doc['created_at'].isoformat()
+    await db.bills.insert_one(bill_doc)
+    
     return rental_obj
 
 @api_router.get("/rentals", response_model=List[Rental])
