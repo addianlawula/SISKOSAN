@@ -81,6 +81,22 @@ const Layout = () => {
                 </Link>
               );
             })}
+            
+            {isSuperAdmin && (
+              <Link
+                to="/users"
+                data-testid="nav-users"
+                onClick={() => setSidebarOpen(false)}
+                className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                  location.pathname === '/users'
+                    ? 'bg-black text-white'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <UserCog size={20} />
+                <span className="text-sm font-medium">Kelola User</span>
+              </Link>
+            )}
           </nav>
 
           {/* User Info */}
