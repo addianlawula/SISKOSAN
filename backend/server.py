@@ -186,6 +186,17 @@ class TransactionCreate(BaseModel):
     sumber: str
     kategori: str
 
+class Category(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    nama: str
+    tipe: Literal["pemasukan", "pengeluaran", "both"]
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class CategoryCreate(BaseModel):
+    nama: str
+    tipe: Literal["pemasukan", "pengeluaran", "both"]
+
 class DashboardStats(BaseModel):
     jumlah_kamar_terisi: int
     jumlah_kamar_kosong: int
