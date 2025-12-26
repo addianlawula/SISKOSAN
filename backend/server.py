@@ -883,6 +883,42 @@ async def get_transaction_summary(bulan: Optional[int] = None, tahun: Optional[i
         "laba": laba
     }
 
+# ==================== CATEGORY ENDPOINTS ====================
+
+@api_router.post("/categories", response_model=Category)
+async def create_category(category_input: CategoryCreate, current_user: User = Depends(require_admin)):
+    existing = await db.categories.find_one({"nama": category_input.nama.lower()}, {"_id": 0})
+    if existing:
+        raise HTTPException(status_code=400, detail="Kategori sudah ada")
+    
+    category_dict = category_input.model_dump()
+    category_dict['nama'] = category_dict['nama'].lower()
+    category_obj = Category(**category_dict)
+    doc = category_obj.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    
+    await db.categories.insert_one(doc)
+    return category_obj
+
+@api_router.get("/categories", response_model=List[Category])
+async def get_categories(tipe: Optional[str] = None, current_user: User = Depends(get_current_user)):
+    query = {}
+    if tipe:
+        query = {"$or": [{"tipe": tipe}, {"tipe": "both"}]}
+    
+    categories = await db.categories.find(query, {"_id": 0}).to_list(1000)
+    for cat in categories:
+        if isinstance(cat['created_at'], str):
+            cat['created_at'] = datetime.fromisoformat(cat['created_at'])
+    return categories
+
+@api_router.delete("/categories/{category_id}")
+async def delete_category(category_id: str, current_user: User = Depends(require_admin)):
+    result = await db.categories.delete_one({"id": category_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Kategori tidak ditemukan")
+    return {"message": "Kategori berhasil dihapus"}
+
 # ==================== DASHBOARD ENDPOINTS ====================
 
 @api_router.get("/dashboard", response_model=DashboardStats)
