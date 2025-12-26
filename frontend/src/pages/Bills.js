@@ -94,14 +94,47 @@ const Bills = () => {
   };
 
   const handleMarkPaid = async (billId) => {
-    if (!window.confirm('Tandai tagihan ini sebagai lunas?')) return;
+    setSelectedBill(billId);
+    setPaymentDialogOpen(true);
+  };
 
+  const confirmMarkPaid = async () => {
     try {
-      await axios.post(`${API}/bills/${billId}/mark-paid`);
+      await axios.post(`${API}/bills/${selectedBill}/mark-paid?cara_bayar=${caraBayar}`);
       toast.success('Tagihan berhasil ditandai lunas');
-      fetchData();
+      
+      if (caraBayar === 'non_tunai') {
+        setPaymentDialogOpen(false);
+        setUploadDialogOpen(true);
+      } else {
+        setPaymentDialogOpen(false);
+        setSelectedBill(null);
+        setCaraBayar('tunai');
+        fetchData();
+      }
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Gagal menandai tagihan lunas');
+    }
+  };
+
+  const handleUploadProof = async () => {
+    if (!uploadFile || !selectedBill) return;
+
+    const formData = new FormData();
+    formData.append('file', uploadFile);
+
+    try {
+      await axios.post(`${API}/bills/${selectedBill}/upload`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      toast.success('Bukti bayar berhasil diupload');
+      setUploadDialogOpen(false);
+      setUploadFile(null);
+      setSelectedBill(null);
+      setCaraBayar('tunai');
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Gagal upload bukti bayar');
     }
   };
 
