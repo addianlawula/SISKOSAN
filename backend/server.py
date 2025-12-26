@@ -48,13 +48,13 @@ class User(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     email: EmailStr
-    role: Literal["owner", "admin"]
+    role: Literal["super_admin", "admin", "owner"]
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class UserCreate(BaseModel):
     email: EmailStr
     password: str
-    role: Literal["owner", "admin"]
+    role: Literal["super_admin", "admin", "owner"]
 
 class UserLogin(BaseModel):
     email: EmailStr
