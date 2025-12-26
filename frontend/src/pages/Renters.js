@@ -23,7 +23,7 @@ const Renters = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const { user } = useContext(AuthContext);
   const location = useLocation();
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
 
   const [useExistingTenant, setUseExistingTenant] = useState(false);
   const [formData, setFormData] = useState({

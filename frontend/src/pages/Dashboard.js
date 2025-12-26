@@ -17,7 +17,7 @@ const Dashboard = () => {
   const [caraBayar, setCaraBayar] = useState('tunai');
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
 
   useEffect(() => {
     fetchStats();

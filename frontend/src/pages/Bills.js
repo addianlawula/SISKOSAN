@@ -25,7 +25,7 @@ const Bills = () => {
   const [caraBayar, setCaraBayar] = useState('tunai');
   const [uploadFile, setUploadFile] = useState(null);
   const { user } = useContext(AuthContext);
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
 
   const [formData, setFormData] = useState({
     rental_id: '',

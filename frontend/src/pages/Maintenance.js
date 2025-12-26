@@ -20,7 +20,7 @@ const Maintenance = () => {
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
   const [selectedMaintenance, setSelectedMaintenance] = useState(null);
   const { user } = useContext(AuthContext);
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
 
   const [formData, setFormData] = useState({
     room_id: '',
