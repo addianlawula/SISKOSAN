@@ -341,7 +341,15 @@ class SiskosanAPITester:
         """Test bill operations"""
         print("\n=== TESTING BILLS ===")
         
-        # Get all bills (should include auto-created ones from contract)
+        # Test generate monthly bills
+        success, response = self.run_test(
+            "Generate Monthly Bills",
+            "POST",
+            "bills/generate-monthly",
+            200
+        )
+        
+        # Get all bills (should include auto-created ones from rental)
         success, response = self.run_test(
             "Get All Bills",
             "GET",
@@ -355,27 +363,37 @@ class SiskosanAPITester:
                 bill_id = bills[0]['id']
                 self.created_ids['bills'].append(bill_id)
                 
-                # Test mark bill as paid
+                # Test mark bill as paid with tunai
                 self.run_test(
-                    "Mark Bill as Paid",
+                    "Mark Bill as Paid (Tunai)",
                     "POST",
-                    f"bills/{bill_id}/mark-paid",
+                    f"bills/{bill_id}/mark-paid?cara_bayar=tunai",
+                    200
+                )
+                
+                # Test download kwitansi
+                self.run_test(
+                    "Download Kwitansi",
+                    "GET",
+                    f"bills/{bill_id}/kwitansi",
                     200
                 )
                 
                 return True
         
         # Create manual bill if no auto bills exist
-        if self.created_ids['contracts']:
+        if self.created_ids['rentals']:
             bill_data = {
-                "contract_id": self.created_ids['contracts'][0],
+                "rental_id": self.created_ids['rentals'][0],
                 "bulan": 12,
                 "tahun": 2024,
-                "jumlah": 1000000
+                "jumlah": 100000,
+                "tipe": "tambahan",
+                "keterangan": "Biaya listrik tambahan"
             }
             
             success, response = self.run_test(
-                "Create Manual Bill",
+                "Create Additional Bill",
                 "POST",
                 "bills",
                 200,
