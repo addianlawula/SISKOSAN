@@ -131,6 +131,7 @@ class Bill(BaseModel):
     tipe: Literal["sewa", "tambahan"] = "sewa"
     keterangan: Optional[str] = None
     status: Literal["belum_bayar", "lunas"] = "belum_bayar"
+    cara_bayar: Optional[Literal["tunai", "non_tunai"]] = None
     bukti_bayar: Optional[str] = None
     tanggal_bayar: Optional[datetime] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
