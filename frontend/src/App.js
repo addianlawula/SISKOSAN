@@ -79,6 +79,7 @@ function App() {
             <Route path="renters" element={<Renters />} />
             <Route path="bills" element={<Bills />} />
             <Route path="transactions" element={<Transactions />} />
+            <Route path="users" element={<Users />} />
           </Route>
         </Routes>
       </BrowserRouter>
