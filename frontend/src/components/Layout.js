@@ -9,7 +9,6 @@ const Layout = () => {
   const { user, logout } = useContext(AuthContext);
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const isAdmin = user?.role === 'admin';
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
