@@ -4,6 +4,8 @@ import { API, AuthContext } from '../App';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Home, Receipt, DollarSign, Wrench, CheckCircle, UserPlus } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
+import { Label } from '../components/ui/label';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
