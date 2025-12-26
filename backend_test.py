@@ -270,60 +270,67 @@ class SiskosanAPITester:
             return True
         return False
 
-    def test_contracts(self):
-        """Test contract operations and business logic"""
-        print("\n=== TESTING CONTRACTS ===")
+    def test_rentals(self):
+        """Test rental operations and business logic"""
+        print("\n=== TESTING RENTALS ===")
         
         if not self.created_ids['rooms'] or not self.created_ids['tenants']:
-            print("❌ Need rooms and tenants to test contracts")
+            print("❌ Need rooms and tenants to test rentals")
             return False
         
-        # Create contract
-        start_date = datetime.now()
-        end_date = start_date + timedelta(days=365)
-        
-        contract_data = {
-            "tenant_id": self.created_ids['tenants'][0],
+        # Create rental with new tenant (inline create)
+        rental_data = {
             "room_id": self.created_ids['rooms'][0],
-            "tanggal_mulai": start_date.isoformat(),
-            "tanggal_selesai": end_date.isoformat(),
-            "harga": 1000000
+            "harga": 1000000,
+            "tanggal_mulai": datetime.now().isoformat(),
+            "tenant": {
+                "nama": "Jane Doe",
+                "telepon": "08987654321",
+                "email": "jane@example.com",
+                "ktp": "3201234567890002",
+                "alamat": "Jl. Test No. 456"
+            }
         }
         
         success, response = self.run_test(
-            "Create Contract",
+            "Create Rental with New Tenant",
             "POST",
-            "contracts",
+            "rentals",
             200,
-            data=contract_data
+            data=rental_data
         )
         
         if success and 'id' in response:
-            contract_id = response['id']
-            self.created_ids['contracts'].append(contract_id)
+            rental_id = response['id']
+            self.created_ids['rentals'].append(rental_id)
             
-            # Get all contracts
+            # Get all rentals
             self.run_test(
-                "Get All Contracts",
+                "Get All Rentals",
                 "GET",
-                "contracts",
+                "rentals",
                 200
             )
             
-            # Test duplicate contract validation (same room)
+            # Test duplicate rental validation (same room)
+            rental_data2 = {
+                "room_id": self.created_ids['rooms'][0],
+                "tenant_id": self.created_ids['tenants'][0],
+                "harga": 1000000
+            }
             self.run_test(
-                "Create Duplicate Contract (should fail)",
+                "Create Duplicate Rental (should fail)",
                 "POST",
-                "contracts",
+                "rentals",
                 400,
-                data=contract_data
+                data=rental_data2
             )
             
-            # Test end contract
+            # Test end rental
             self.run_test(
-                "End Contract",
+                "End Rental",
                 "POST",
-                f"contracts/{contract_id}/end",
+                f"rentals/{rental_id}/end",
                 200
             )
             
