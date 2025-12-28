@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 
 def test_siskosan_basic():
-    base_url = "https://kosman-app.preview.emergentagent.com/api"
+    base_url = "https://dorm-manager-15.preview.emergentagent.com/api"
     
     print("🚀 Testing SISKOSAN Basic Functionality...")
     
